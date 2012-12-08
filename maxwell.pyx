@@ -3,21 +3,6 @@ from libc.string cimport const_char, const_void
 from libc.stdlib cimport malloc, free
 
 cimport cpython
-#cimport stdlib
-
-#cdef unicode tounicode(char* s):
-#    return s.decode('UTF-8', 'strict')
-
-#cdef unicode tounicode_with_length(
-#        char* s, size_t length):
-#    return s[:length].decode('UTF-8', 'strict')
-
-#cdef unicode tounicode_with_length_and_free(
-#        char* s, size_t length):
-#    try:
-#        return s[:length].decode('UTF-8', 'strict')
-#    finally:
-#        stdlib.free(s)
 
 ctypedef unsigned int dword
 ctypedef unsigned short word
@@ -421,29 +406,102 @@ cdef class camera:
         self.thisptr.getShiftLens(xShift, yShift)
         return (xShift, yShift)
 
-    #byte    setShiftLens( real xShift, real yShift )
-        #byte    getShiftLens( real& xShift, real& yShift )
+    def getValues(self):
+        ''' returns a dict with values '''
+        cdef dword nSteps = 0
+        cdef real shutter = 0
+        cdef real orthoX = 0
+        cdef real orthoY = 0
+        cdef real orthoZoom = 0
+        cdef real focalLenght = 0
+        cdef real fStop = 0
+        cdef const_char * pDiaphragmType
+        cdef real angle = 0
+        cdef dword nBlades = 0
+        cdef real filmWidth = 0
+        cdef real filmHeight = 0
+        cdef real iso = 0
+        cdef dword fps = 0
+        cdef dword xRes = 0
+        cdef dword yRes = 0
+        cdef real pixelAspect = 0
+        cdef byte projectionType = 0
+        self.thisptr.getValues( nSteps, shutter, filmWidth, filmHeight, iso, &pDiaphragmType, angle, nBlades,\
+                               fps, xRes, yRes, pixelAspect,projectionType )
+        return {'nSteps': nSteps, 'shutter': shutter, 'orthoX': orthoX,'orthoY': orthoY,'orthoZoom': orthoZoom,
+                'focalLenght': focalLenght, 'fStop': fStop, 'pDiaphragmType': pDiaphragmType, 'angle': angle,'nBlades': nBlades,
+                'filmWidth': filmWidth, 'filmHeight': filmHeight, 'iso': iso, 'fps': fps, 'xRes': xRes, 'yRes':yRes, 'pixelAspect': pixelAspect, 'projectionType': projectionType }
 
-    #byte getOrthoValues( dword iStep, real& orthoX, real& orthoY, real& orthoZoom, real& focalLength, real& fStop )
-    #const_char* getValues( dword& nSteps, real& shutter, real& filmWidth, real& filmHeight, real& iso,\
-    #    const_char** pDiaphragmType, real& angle, dword& nBlades,\
-    #    dword& fps, dword& xRes, dword& yRes, real& pixelAspect,\
-    #    byte& projectionType )
+    def getOrthoValues(self, dword iStep):
+        ''' returns a dict with values '''
+        cdef real orthoX = 0
+        cdef real orthoY = 0
+        cdef real orthoZoom = 0
+        cdef real focalLength = 0
+        cdef real fStop = 0
+        self.thisptr.getOrthoValues( iStep, orthoX, orthoY, orthoZoom, focalLength, fStop )
+        return {'orthoX': orthoX,'orthoY': orthoY,'orthoZoom': orthoZoom, 'focalLenght': focalLength, 'fStop': fStop }
+
     #byte setResolution( dword xRes, dword yRes )
+    def setResolution(self,dword xRes, dword yRes):
+        self.thisptr.setResolution(xRes,yRes)
+
     #byte getResolution( dword& xRes, dword& yRes )
+    def getResolution(self):
+        cdef dword xRes = 0
+        cdef dword yRes = 0
+        self.thisptr.getResolution(xRes, yRes)
+        return xRes, yRes
+
     #byte setPixelAspect( real pixelAspect )
+    def setPixelAspect(self, real pixelAspect):
+        self.thisptr.setPixelAspect(pixelAspect)
+
     #byte getPixelAspect( real& pixelAspect )
+    def getPixelAspect(self):
+        cdef real pixelAspect = 0
+        self.thisptr.getPixelAspect(pixelAspect)
+        return pixelAspect
+
+    #byte    setActive()
+    def setActive(self):
+        self.thisptr.setActive()
 
     #byte setShutter( real shutter )
+    def setShutter(self, real shutter):
+        self.thisptr.setShutter(shutter)
+
     #byte getShutter( real& shutter )
+    def getShutter(self):
+        cdef real shutter = 0
+        self.thisptr.getShutter(shutter)
+        return shutter
 
     #byte setIso( real iso )
+    def setIso(self, real iso):
+        self.thisptr.setIso(iso)
+
     #byte getIso( real& iso )
+    def getIso(self):
+        cdef real iso = 0
+        self.thisptr.getIso(iso)
+        return iso
 
     #byte setFilmSize( real filmWidth, real filmHeight )
+    def setFilmSize(self, real filmWidth, real filmHeight):
+        self.thisptr.setFilmSize(filmWidth,filmHeight)
+
     #byte getFilmSize( real& filmWidth, real& filmHeight )
+    def getFilmSize(self):
+        cdef real filmWidth = 0
+        cdef real filmHeight = 0
+        self.thisptr.getFilmSize(filmWidth,filmHeight)
+        return filmWidth, filmHeight
 
     #byte setDiaphragm( const_char* pDiaphragmType, real angle, dword nBlades )
+    def setDiaphragm(self, const_char* pDiaphragmType, real angle, dword nBlades):
+        self.thisptr.setDiaphragm(pDiaphragmType,angle, nBlades)
+
     #byte getDiaphragm( const_char** pDiaphragmType, real& angle, dword& nBlades )
 
     #byte setFPS( real fps )
@@ -479,7 +537,7 @@ cdef class camera:
     #byte    getUserData( void** pData )
 
     # Method:    setActive. Sets the active camera used when rendering when there is more than one^M
-    #byte    setActive()
+
 
     
 
