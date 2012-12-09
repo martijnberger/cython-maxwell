@@ -97,13 +97,20 @@ cdef extern from "h/flags.h":
         Cflags()
 
 cdef extern from "h/maxwell.h":
+    cdef cppclass MXparamList:
+        pass
     ctypedef real const_real "const real"
 
     ctypedef unsigned char byte "byte"
     ctypedef int bool "bool"
     ctypedef void* const_CoptionsReadMXS "const Cmaxwell::CoptionsReadMXS"
     ctypedef byte const_byte "const byte"
+    ctypedef dword const_dword "const dword"
+    ctypedef bool const_bool "const bool"
     ctypedef void* const_Cobject "const Cmaxwell::Cobject"
+    ctypedef void* const_Cpoint "const Cpoint"
+    ctypedef void* const_Cvector "const Cvector"
+    ctypedef void* const_Crgb "const Crgb"
 
     cdef cppclass Cmaxwell:
         cppclass Cpointer:
@@ -125,6 +132,7 @@ cdef extern from "h/maxwell.h":
         cppclass CsceneInfo:
             dword nMeshes, nTriangles, nVertexes, nNormals, nMaterials, nBitmaps
             CsceneInfo()
+
         cppclass Ccamera(Cpointer):
             cppclass Citerator:
                 Citerator()
@@ -205,8 +213,9 @@ cdef extern from "h/maxwell.h":
         cppclass Cmaterial(Cpointer):
             cppclass Citerator:
                 Citerator()
-                Cmaterial fist(Cmaxwell* pMaxwell)
+                Cmaterial first(Cmaxwell* pMaxwell)
                 Cmaterial next()
+            Cmaterial()
             Cmaterial createCopy()
             byte free()
             byte extract()
@@ -217,9 +226,10 @@ cdef extern from "h/maxwell.h":
         cppclass Cobject(Cpointer):
             cppclass Citerator:
                 Citerator()
-                Cobject fist(Cmaxwell* pMaxwell)
+                Cobject first(Cmaxwell* pMaxwell)
                 Cobject next()
-            
+
+            Cobject()
             byte free()
             byte getName(char** pName)
             byte setName(const_char* pName)
@@ -279,15 +289,181 @@ cdef extern from "h/maxwell.h":
             byte    setMaterial( Cmaterial material )
 
             # Method:    get/setProperties. Caustics properties of the object
-            byte    getProperties( byte& doDirectCausticsReflection, byte& doDirectCausticsRefraction,
+            byte    getProperties( byte& doDirectCausticsReflection, byte& doDirectCausticsRefraction, \
                                    byte& doIndirectCausticsReflection, byte& doIndirectCausticsRefraction )
-            byte    setProperties( byte doDirectCausticsReflection, byte doDirectCausticsRefraction,
+            byte    setProperties( byte doDirectCausticsReflection, byte doDirectCausticsRefraction, \
                                    byte doIndirectCausticsReflection, byte doIndirectCausticsRefraction )
 
+            byte  getDependencies( dword& numDependencies, char** & paths, const_bool& searchInsideProxy )
+
+            # Method:    getters/setters to set the mesh properties of the Cobject
+            byte    getNumVertexes( dword& nVertexes )
+            byte    getNumTriangles( dword& nTriangles )
+            byte    getNumNormals( dword& nNormals )
+            byte    getNumPositionsPerVertex( dword& nPositions )
+            byte    getNumChannelsUVW( dword& nChannelsUVW )
+
+            byte    addChannelUVW( dword& index, byte id)
+            byte    generateSphericalUVW( dword& iChannel, Cbase& projectorBase, \
+                                          real& startLatitude, real& endLatitude, \
+                                          real& startLongitude, real& endLongitude )
+            byte    generateCylindricalUVW( dword& iChannel, Cbase& projectorBase, \
+                                            real& startAngle, real& endAngle )
+            byte    generateCubicUVW( dword& iChannel, Cbase& projectorBase, bool mirrorBackFaces)
+            byte    generatePlanarUVW( dword& iChannel, Cbase& projectorBase )
 
 
+            byte    getVertex( dword iVertex, dword iPosition, Cpoint& point )
+            byte    setVertex( dword iVertex, dword iPosition, const_Cpoint& point )
+
+            byte    getNormal( dword iNormal, dword iPosition, Cvector& normal )
+            byte    setNormal( dword iNormal, dword iPosition, const_Cvector& normal )
+
+            byte    getTriangle( dword iTriangle, dword& iVertex1, dword& iVertex2, dword& iVertex3, \
+                                 dword& iNormal1, dword& iNormal2, dword& iNormal3 )
+            byte    setTriangle( dword iTriangle, dword iVertex1, dword iVertex2, dword iVertex3, \
+                                 dword iNormal1, dword iNormal2, dword iNormal3 )
+
+            byte    getTriangleGroup( dword iTriangle, dword& idGroup )
+            byte    setTriangleGroup( dword iTriangle, dword idGroup )
+
+            byte    getTriangleUVW( dword iTriangle, dword iChannelID, float& u1, float& v1, float& w1, \
+                                    float& u2, float& v2, float& w2, float& u3, float& v3, float& w3 )
+            byte    setTriangleUVW( dword iTriangle, dword iChannelID, float u1, float v1, float w1, \
+                                    float u2, float v2, float w2, float u3, float v3, float w3 )
+
+            byte    getTriangleMaterial( dword iTriangle, Cmaterial& material )
+            byte    setTriangleMaterial( dword iTriangle, Cmaterial material )
+
+            byte    getGroupMaterial( dword iGroup, Cmaterial& material )
+            byte    setGroupMaterial( dword iGroup, Cmaterial material )
+
+            byte    setBaseAndPivot( Cbase base, Cbase pivot, real substepTime)
+            byte    getBaseAndPivot( Cbase& base, Cbase& pivot, const_real substepTime)
+
+            # Method: getWorldTransform
+            # Description: Returns the world transform of the object
+            # taking into account base and pivot of all its parents
+            byte    getWorldTransform( Cbase& base )
+
+            # Method: getTransformSubstepsCount
+            # Description: Return the number of substeps used for defining Base and Pivot motion blur
+            dword   getTransformSubstepsCount( )
+
+            # Method: getTransformSubstepsCount
+            # Description: Return transform information( base, pivot and time) for the given index
+            byte    getTransformStepInfoByIndex( Cbase& base, Cbase& pivot, real& time, const_dword index )
+
+            #Global base, assumes global pivot is located at 0,0,0 and
+            #with pivot axis 1,0,0  0,1,0   0,0,1
+
+            # Method:    get/set position/rotation/scale/shear
+            # Description: Used by Maxwell Studio (not needed for rendering)
+            # isPosRotScaleInitialized returns true by reference if these methods have been used for the given Cobject
+            byte    getPosition( Cvector& vector )
+            byte    setPosition( Cvector vector )
+
+            byte    getRotation( Cvector& vector )
+            byte    setRotation( Cvector vector )
+
+            byte    getScale( Cvector& vector )
+            byte    setScale( Cvector vector )
+
+            byte    getShear( Cvector& vector )
+            byte    setShear( Cvector vector )
+
+            byte    getPivotPosition( Cvector& vector )
+            byte    setPivotPosition( Cvector vector )
+
+            byte    getPivotRotation( Cvector& vector )
+            byte    setPivotRotation( Cvector vector )
+
+            byte    isPosRotScaleInitialized( bool& init )
+
+            # Method:    cleanGeometry
+            # Description: Optional routine that removes degenerated triangles, repeated/unused vertex and normals.
+            # This function is automatically called inside the writeMXS method
+            # it is not needed to call it except in scenarios like the interactive engine
+            byte    cleanGeometry()
+
+            #
+            # DISPLAY FUNCTIONS. Getters/setters of visibility attributes of  Cobject
+            #
+            byte getHide( bool& hide )
+            byte setHide( bool hide )
+
+            byte getHideToCamera( bool& hide )
+            byte setHideToCamera( bool hide )
+
+            byte getHideToReflectionsRefractions( bool& hide )
+            byte setHideToReflectionsRefractions( bool hide )
+
+            byte getHideToGI( bool& hide )
+            byte setHideToGI( bool hide )
+
+            byte isExcludedOfCutPlanes( bool& excluded )
+            byte excludeOfCutPlanes( bool exclude )
+
+            float* getReferenceProxyDisplayPoints( const_dword& percent, const_dword& maxPoints, dword& nPoints )
+
+            # Method:    get/setColorID
+            # Description: gets/sets the color used by this object in the Object ID render channel
+            # rgb values must always be in the 0-1 range
+            byte setColorID( const_Crgb& color )
+            byte getColorID( Crgb& color )
+
+            # Method:    get/setSubdivisionLevel
+            # Description: gets/sets the subdivision level of the mesh
+            # 0 means no subdivision is applied
+            byte setSubdivisionLevel( const_dword& level )
+            byte getSubdivisionLevel( dword& level )
 
 
+            # Method used to recalculate structures needed in interactive mode when the object changes
+            # It is not needed to call it if the UVs or material change,
+            # but just should be called when the mesh or base change.
+            byte setGeometryDirty( )
+
+            # Method:    get/setUserData  (Not used in plugins)
+            byte getUserData( void** pData )
+            byte setUserData( void* pData ) #// [Not used by plugins]
+
+            #// Method:  Buffer accessors (Not used in plugins)
+            CfPoint* getVertexesBuffer( )
+            CfPoint* getNormalsBuffer( )
+
+            byte initializeMesh ( dword nVertex, dword nNormals, dword nFaces, dword positionsPerVertex )
+            #This function reinitializes all the basic geometry and UV arrays.
+            #The number of UV channels and their ids remain the same, but UV´s are zeroed
+            #Motion blur vertices can be wiped (if there were) setting newNpositionsPerVertex = 1
+            #or added (if there weren´t) setting newNpositionsPerVertex = 2
+            byte resizeMesh( dword newNVertex, dword newNNormals, dword newNFaces, dword newNpositionsPerVertex )
+
+            byte    generateCustomUVW( dword iChannel, dword iGeneratorType )
+
+            byte    getUVWChannelProperties( dword iChannel, byte& projType, bool& customProj, \
+                                             Cbase& projectorBase, \
+                                             real& startLatitude, real& endLatitude, \
+                                             real& startLongitude, real& endLongitude, \
+                                             real& startAngle, real& endAngle, bool& mirrorBackFaces )
+
+            byte    getGlobalXform( Cbase& xForm )
+            byte    getGlobalNormalsXform( Cbase& nXform )
+            byte    getInverseGlobalXform( Cbase& ixForm )
+            byte    getInverseGlobalNormalsXform( Cbase& inXform )
+
+            byte isGeometryLoader( byte& isGeomExtension )
+            byte isGeometryProcedural( byte& isGeomProceduralExtension )
+            byte hasGeometryModifiers( byte& hasGeomModifierExtensions )
+
+            byte applyGeometryModifierExtension( MXparamList*& extensionParams )
+            byte cleanAllGeometryModifierExtensions()
+
+            byte getGeometryLoaderExtensionParams( MXparamList*& extensionParams )
+            byte getGeometryProceduralExtensionParams( MXparamList*& extensionParams )
+
+            byte getGeometryModifierExtensionsNumber( dword& numModifierExtensions )
+            byte getGeometryModifierExtensionParamsAtIndex( MXparamList*& extensionParams, dword modifierExtensionsIndex )
 
 
         Cmaxwell(byte(*callback)(byte isError, const_char *pMethod, const_char *pError, const_void *pValue))
@@ -359,6 +535,46 @@ cdef class maxwell:
         res = camera()
         res.thisptr = cam
         return res
+
+    def getObjectIterator(self):
+        #return ObjectIterator(self)
+        cdef Cmaxwell.Cobject.Citerator it
+        cdef Cmaxwell.Cobject o = it.first(self.thisptr)
+        while o.isNull() == <byte>0:
+            yield _t_Object(&o)
+            o = it.next()
+
+    def getMaterialsIterator(self):
+        #return ObjectIterator(self)
+        cdef Cmaxwell.Cmaterial.Citerator it
+        cdef Cmaxwell.Cmaterial m = it.first(self.thisptr)
+        while m.isNull() == <byte>0:
+            yield _t_Material(&m)
+            m = it.next()
+
+
+cdef class ObjectIterator:
+    cdef Cmaxwell.Cobject.Citerator * it
+    cdef Cmaxwell.Cobject o
+
+    def __cinit__(self, maxwell m):
+        self.it = new Cmaxwell.Cobject.Citerator()
+        print("created object iterator")
+        self.o = self.it.first(m.thisptr)
+
+    def __next__(self):
+        self.o = self.it.next()
+        if self.o.isNull():
+            print("iteration done")
+            raise StopIteration
+        return _t_Object(&self.o)
+
+    def __iter__(self):
+        return self
+
+    def __dealloc__(self):
+        print("destroy iterator")
+        del self.it
 
 
 
@@ -433,6 +649,301 @@ cdef object _t_Vector(Cvector *p):
     del res.thisptr # till i find a better way to do things we have some double allocation going on
     res.thisptr = p
     return res
+
+
+cdef class Object:
+    cdef Cmaxwell.Cobject *thisptr
+
+    def __cinit__(self):
+        pass
+
+    def __dealloc__(self):
+        pass
+
+    #def free(self):
+    #    self.thisptr.free()
+
+    def setName(self, name):
+        cdef const_char *c_string = name
+        self.thisptr.setName(c_string)
+
+    def getName(self):
+        cdef char* name = <char*>malloc(sizeof(char[256]))
+        self.thisptr.getName(&name)
+        res = name.decode('UTF-8')
+        return res
+
+    def isMesh(self):
+        cdef byte res = 0
+        self.thisptr.isMesh(res)
+        return res
+
+    def isInstance(self):
+        cdef byte res = 0
+        self.thisptr.isInstance(res)
+        return res
+
+    def getInstanced(self):
+        res = self.thisptr.getInstanced()
+        return _t_Object(&res)
+
+    def isRFRK(self):
+        cdef byte res = 0
+        res = self.thisptr.isRFRK(res)
+        return res
+
+    def isNull(self):
+        return self.thisptr.isNull()
+
+
+cdef object _t_Object(Cmaxwell.Cobject *p):
+    res = Object()
+    res.thisptr = p
+    return res
+
+
+cdef class Material:
+    cdef Cmaxwell.Cmaterial *thisptr
+
+    def __cinit__(self):
+        pass
+
+    def __dealloc__(self):
+        pass
+
+    def setName(self, name):
+        cdef const_char *c_string = name
+        self.thisptr.setName(c_string)
+
+    def getName(self):
+        return self.thisptr.getName().decode('UTF-8')
+
+cdef object _t_Material(Cmaxwell.Cmaterial *p):
+    res = Material()
+    res.thisptr = p
+    return res
+'''
+# Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
+byte isRFRK( byte& isRfrk )
+
+# Method:    getRFRKParameters
+byte getRFRKParameters( char*& binSeqNames, char*& rwName, char*& substractiveField,\
+    real& scale, real& resolution, real& polySize, real& radius, real& smooth, real& core,\
+    real& splash, real& maxVelocity, int& axis, real& fps, int& frame, int& offset, bool& f,\
+    int& rwTesselation, bool& mb, real& mbCoef )
+
+
+byte setRFRKParameters( const_char* binSeqNames, const_char* rwName, char* substractiveField,\
+    real scale, real resolution, real polySize, real radius, real smooth, real core,\
+                                                                               real splash, real maxVelocity, int axis, real fps, int frame, int offset, bool flipNorm,\
+                                                                                                                                                              int rwTesselation, bool mb, real mbCoef )
+
+# Method:    get/setProxyPath. Get/sets the scene file referenced by this object
+const_char* getReferencedScenePath()
+byte setReferencedScenePath( const_char* proxyPath )
+
+# Method:    get/setReferenceMaterial. Get/sets the material of an specific object inside the referenced scene
+byte getReferencedSceneMaterial( const_char* objectName, Cmaterial& material )
+byte setReferencedSceneMaterial( const_char* objectName, Cmaterial material )
+
+# Method: get/setReferencedOverrideFlags. Get the override policy for visibility flags
+# flags are described in OVERRIDE_REFERENCE_FLAGS in maxwellenums.h
+byte getReferencedOverrideFlags( byte& flags )
+byte setReferencedOverrideFlags( const_byte& flags )
+
+# Method:    mergeMeshes
+# Description: Merges an array of meshes into a single mesh.
+# The original meshes are not removed (it can be done later calling Cobject::free() ).
+byte    mergeMeshes( const_Cobject* pMeshes, dword nMeshes )
+
+# Method:    get/setParent. Get/sets the parent object in the hierarchy
+byte    getParent( Cobject& parent )
+byte    setParent( Cobject parent )
+
+# Method:    get/setUuid. Uuid that can be used for custom purposes
+const_char* getUuid( )
+byte    setUuid( const_char* pUuid )
+
+# Method:    get/setMaterial. Material applied to the object
+byte    getMaterial( Cmaterial& material )
+byte    setMaterial( Cmaterial material )
+
+# Method:    get/setProperties. Caustics properties of the object
+byte    getProperties( byte& doDirectCausticsReflection, byte& doDirectCausticsRefraction,\
+    byte& doIndirectCausticsReflection, byte& doIndirectCausticsRefraction )
+byte    setProperties( byte doDirectCausticsReflection, byte doDirectCausticsRefraction,\
+                                                             byte doIndirectCausticsReflection, byte doIndirectCausticsRefraction )
+
+byte  getDependencies( dword& numDependencies, char** & paths, const_bool& searchInsideProxy )
+
+# Method:    getters/setters to set the mesh properties of the Cobject
+byte    getNumVertexes( dword& nVertexes )
+byte    getNumTriangles( dword& nTriangles )
+byte    getNumNormals( dword& nNormals )
+byte    getNumPositionsPerVertex( dword& nPositions )
+byte    getNumChannelsUVW( dword& nChannelsUVW )
+
+byte    addChannelUVW( dword& index, byte id)
+byte    generateSphericalUVW( dword& iChannel, Cbase& projectorBase,\
+    real& startLatitude, real& endLatitude,\
+    real& startLongitude, real& endLongitude )
+byte    generateCylindricalUVW( dword& iChannel, Cbase& projectorBase,\
+    real& startAngle, real& endAngle )
+byte    generateCubicUVW( dword& iChannel, Cbase& projectorBase, bool mirrorBackFaces)
+byte    generatePlanarUVW( dword& iChannel, Cbase& projectorBase )
+
+
+byte    getVertex( dword iVertex, dword iPosition, Cpoint& point )
+byte    setVertex( dword iVertex, dword iPosition, const_Cpoint& point )
+
+byte    getNormal( dword iNormal, dword iPosition, Cvector& normal )
+byte    setNormal( dword iNormal, dword iPosition, const_Cvector& normal )
+
+byte    getTriangle( dword iTriangle, dword& iVertex1, dword& iVertex2, dword& iVertex3,\
+                           dword& iNormal1, dword& iNormal2, dword& iNormal3 )
+byte    setTriangle( dword iTriangle, dword iVertex1, dword iVertex2, dword iVertex3,\
+                                                                            dword iNormal1, dword iNormal2, dword iNormal3 )
+
+byte    getTriangleGroup( dword iTriangle, dword& idGroup )
+byte    setTriangleGroup( dword iTriangle, dword idGroup )
+
+byte    getTriangleUVW( dword iTriangle, dword iChannelID, float& u1, float& v1, float& w1,\
+                                               float& u2, float& v2, float& w2, float& u3, float& v3, float& w3 )
+byte    setTriangleUVW( dword iTriangle, dword iChannelID, float u1, float v1, float w1,\
+                                                                                     float u2, float v2, float w2, float u3, float v3, float w3 )
+
+byte    getTriangleMaterial( dword iTriangle, Cmaterial& material )
+byte    setTriangleMaterial( dword iTriangle, Cmaterial material )
+
+byte    getGroupMaterial( dword iGroup, Cmaterial& material )
+byte    setGroupMaterial( dword iGroup, Cmaterial material )
+
+byte    setBaseAndPivot( Cbase base, Cbase pivot, real substepTime)
+byte    getBaseAndPivot( Cbase& base, Cbase& pivot, const_real substepTime)
+
+# Method: getWorldTransform
+# Description: Returns the world transform of the object
+# taking into account base and pivot of all its parents
+byte    getWorldTransform( Cbase& base )
+
+# Method: getTransformSubstepsCount
+# Description: Return the number of substeps used for defining Base and Pivot motion blur
+dword   getTransformSubstepsCount( )
+
+# Method: getTransformSubstepsCount
+# Description: Return transform information( base, pivot and time) for the given index
+byte    getTransformStepInfoByIndex( Cbase& base, Cbase& pivot, real& time, const_dword index )
+
+#Global base, assumes global pivot is located at 0,0,0 and
+#with pivot axis 1,0,0  0,1,0   0,0,1
+
+# Method:    get/set position/rotation/scale/shear
+# Description: Used by Maxwell Studio (not needed for rendering)
+# isPosRotScaleInitialized returns true by reference if these methods have been used for the given Cobject
+byte    getPosition( Cvector& vector )
+byte    setPosition( Cvector vector )
+
+byte    getRotation( Cvector& vector )
+byte    setRotation( Cvector vector )
+
+byte    getScale( Cvector& vector )
+byte    setScale( Cvector vector )
+
+byte    getShear( Cvector& vector )
+byte    setShear( Cvector vector )
+
+byte    getPivotPosition( Cvector& vector )
+byte    setPivotPosition( Cvector vector )
+
+byte    getPivotRotation( Cvector& vector )
+byte    setPivotRotation( Cvector vector )
+
+byte    isPosRotScaleInitialized( bool& init )
+
+# Method:    cleanGeometry
+# Description: Optional routine that removes degenerated triangles, repeated/unused vertex and normals.
+# This function is automatically called inside the writeMXS method
+# it is not needed to call it except in scenarios like the interactive engine
+byte    cleanGeometry()
+
+#
+# DISPLAY FUNCTIONS. Getters/setters of visibility attributes of  Cobject
+#
+byte getHide( bool& hide )
+byte setHide( bool hide )
+
+byte getHideToCamera( bool& hide )
+byte setHideToCamera( bool hide )
+
+byte getHideToReflectionsRefractions( bool& hide )
+byte setHideToReflectionsRefractions( bool hide )
+
+byte getHideToGI( bool& hide )
+byte setHideToGI( bool hide )
+
+byte isExcludedOfCutPlanes( bool& excluded )
+byte excludeOfCutPlanes( bool exclude )
+
+float* getReferenceProxyDisplayPoints( const_dword& percent, const_dword& maxPoints, dword& nPoints )
+
+# Method:    get/setColorID
+# Description: gets/sets the color used by this object in the Object ID render channel
+# rgb values must always be in the 0-1 range
+byte setColorID( const_Crgb& color )
+byte getColorID( Crgb& color )
+
+# Method:    get/setSubdivisionLevel
+# Description: gets/sets the subdivision level of the mesh
+# 0 means no subdivision is applied
+byte setSubdivisionLevel( const_dword& level )
+byte getSubdivisionLevel( dword& level )
+
+
+# Method used to recalculate structures needed in interactive mode when the object changes
+# It is not needed to call it if the UVs or material change,
+# but just should be called when the mesh or base change.
+byte setGeometryDirty( )
+
+# Method:    get/setUserData  (Not used in plugins)
+byte getUserData( void** pData )
+byte setUserData( void* pData ) #// [Not used by plugins]
+
+#// Method:  Buffer accessors (Not used in plugins)
+CfPoint* getVertexesBuffer( )
+CfPoint* getNormalsBuffer( )
+
+byte initializeMesh ( dword nVertex, dword nNormals, dword nFaces, dword positionsPerVertex )
+#This function reinitializes all the basic geometry and UV arrays.
+#The number of UV channels and their ids remain the same, but UV´s are zeroed
+#Motion blur vertices can be wiped (if there were) setting newNpositionsPerVertex = 1
+#or added (if there weren´t) setting newNpositionsPerVertex = 2
+byte resizeMesh( dword newNVertex, dword newNNormals, dword newNFaces, dword newNpositionsPerVertex )
+
+byte    generateCustomUVW( dword iChannel, dword iGeneratorType )
+
+byte    getUVWChannelProperties( dword iChannel, byte& projType, bool& customProj,\
+                                       Cbase& projectorBase,\
+                                       real& startLatitude, real& endLatitude,\
+                                       real& startLongitude, real& endLongitude,\
+                                       real& startAngle, real& endAngle, bool& mirrorBackFaces )
+
+byte    getGlobalXform( Cbase& xForm )
+byte    getGlobalNormalsXform( Cbase& nXform )
+byte    getInverseGlobalXform( Cbase& ixForm )
+byte    getInverseGlobalNormalsXform( Cbase& inXform )
+
+byte isGeometryLoader( byte& isGeomExtension )
+byte isGeometryProcedural( byte& isGeomProceduralExtension )
+byte hasGeometryModifiers( byte& hasGeomModifierExtensions )
+
+byte applyGeometryModifierExtension( MXparamList*& extensionParams )
+byte cleanAllGeometryModifierExtensions()
+
+byte getGeometryLoaderExtensionParams( MXparamList*& extensionParams )
+byte getGeometryProceduralExtensionParams( MXparamList*& extensionParams )
+
+byte getGeometryModifierExtensionsNumber( dword& numModifierExtensions )
+byte getGeometryModifierExtensionParamsAtIndex( MXparamList*& extensionParams, dword modifierExtensionsIndex )'''
 
 cdef class camera:
     cdef Cmaxwell.Ccamera thisptr
