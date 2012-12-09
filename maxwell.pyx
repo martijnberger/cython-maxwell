@@ -102,6 +102,8 @@ cdef extern from "h/maxwell.h":
     ctypedef unsigned char byte "byte"
     ctypedef int bool "bool"
     ctypedef void* const_CoptionsReadMXS "const Cmaxwell::CoptionsReadMXS"
+    ctypedef byte const_byte "const byte"
+    ctypedef void* const_Cobject "const Cmaxwell::Cobject"
 
     cdef cppclass Cmaxwell:
         cppclass Cpointer:
@@ -200,6 +202,92 @@ cdef extern from "h/maxwell.h":
             byte    free()
 
             
+        cppclass Cmaterial(Cpointer):
+            cppclass Citerator:
+                Citerator()
+                Cmaterial fist(Cmaxwell* pMaxwell)
+                Cmaterial next()
+            Cmaterial createCopy()
+            byte free()
+            byte extract()
+            byte getVersion(const_char* pFileName, float& version)
+            byte setName(const_char* pFileName)
+            const_char* getName()
+
+        cppclass Cobject(Cpointer):
+            cppclass Citerator:
+                Citerator()
+                Cobject fist(Cmaxwell* pMaxwell)
+                Cobject next()
+            
+            byte free()
+            byte getName(char** pName)
+            byte setName(const_char* pName)
+
+            # Method:    isMesh. Returns isMesh = 1 if this Cobject is a real mesh (not an instance or any other thing)
+            byte isMesh( byte& isMesh )
+
+            # Method:    isInstance. Returns isInstance = 1 if this Cobject is an instance, otherwise returns 0.
+            byte isInstance( byte& isInstance )
+
+            # Method:    getInstanced. If this Cobject is an instance this method returns its parent object
+            Cobject getInstanced()
+
+            # Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
+            byte isRFRK( byte& isRfrk )
+
+            # Method:    getRFRKParameters
+            byte getRFRKParameters( char*& binSeqNames, char*& rwName, char*& substractiveField, \
+                            real& scale, real& resolution, real& polySize, real& radius, real& smooth, real& core, \
+                            real& splash, real& maxVelocity, int& axis, real& fps, int& frame, int& offset, bool& f, \
+                            int& rwTesselation, bool& mb, real& mbCoef )
+
+
+            byte setRFRKParameters( const_char* binSeqNames, const_char* rwName, char* substractiveField, \
+                                real scale, real resolution, real polySize, real radius, real smooth, real core, \
+                                real splash, real maxVelocity, int axis, real fps, int frame, int offset, bool flipNorm, \
+                                int rwTesselation, bool mb, real mbCoef )
+
+            # Method:    get/setProxyPath. Get/sets the scene file referenced by this object
+            const_char* getReferencedScenePath()
+            byte setReferencedScenePath( const_char* proxyPath )
+
+            # Method:    get/setReferenceMaterial. Get/sets the material of an specific object inside the referenced scene
+            byte getReferencedSceneMaterial( const_char* objectName, Cmaterial& material )
+            byte setReferencedSceneMaterial( const_char* objectName, Cmaterial material )
+
+            # Method: get/setReferencedOverrideFlags. Get the override policy for visibility flags
+            # flags are described in OVERRIDE_REFERENCE_FLAGS in maxwellenums.h
+            byte getReferencedOverrideFlags( byte& flags )
+            byte setReferencedOverrideFlags( const_byte& flags )
+
+            # Method:    mergeMeshes
+            # Description: Merges an array of meshes into a single mesh.
+            # The original meshes are not removed (it can be done later calling Cobject::free() ).
+            byte    mergeMeshes( const_Cobject* pMeshes, dword nMeshes )
+
+            # Method:    get/setParent. Get/sets the parent object in the hierarchy
+            byte    getParent( Cobject& parent )
+            byte    setParent( Cobject parent )
+
+            # Method:    get/setUuid. Uuid that can be used for custom purposes
+            const_char* getUuid( )
+            byte    setUuid( const_char* pUuid )
+
+            # Method:    get/setMaterial. Material applied to the object
+            byte    getMaterial( Cmaterial& material )
+            byte    setMaterial( Cmaterial material )
+
+            # Method:    get/setProperties. Caustics properties of the object
+            byte    getProperties( byte& doDirectCausticsReflection, byte& doDirectCausticsRefraction,
+                                   byte& doIndirectCausticsReflection, byte& doIndirectCausticsRefraction )
+            byte    setProperties( byte doDirectCausticsReflection, byte doDirectCausticsRefraction,
+                                   byte doIndirectCausticsReflection, byte doIndirectCausticsRefraction )
+
+
+
+
+
 
 
         Cmaxwell(byte(*callback)(byte isError, const_char *pMethod, const_char *pError, const_void *pValue))
@@ -503,16 +591,54 @@ cdef class camera:
         self.thisptr.setDiaphragm(pDiaphragmType,angle, nBlades)
 
     #byte getDiaphragm( const_char** pDiaphragmType, real& angle, dword& nBlades )
+    def getDiaphragm(self):
+        cdef const_char* pDiaphragmType
+        cdef real angle = 0
+        cdef dword nBlades = 0
+        self.thisptr.getDiaphragm(&pDiaphragmType,angle,nBlades)
+        return {'pDiaphragmType': pDiaphragmType, 'angle': angle,'nBlades': nBlades}
 
     #byte setFPS( real fps )
+    def setFPS(self, real fps):
+        self.thisptr.setFPS(fps)
+
     #byte getFPS( real& fps )
+    def getFPS(self):
+        cdef real fps = 0
+        self.thisptr.getFPS(fps)
+        return fps
 
     #byte setScreenRegion( dword x1, dword y1, dword x2, dword y2, const_char* pRegionType )
+    def setScreenRegion(self, dword x1, dword y1, dword x2, dword y2, const_char * pRegionType):
+        self.thisptr.setScreenRegion(x1,y1,x2,y2,pRegionType)
+
     #byte getScreenRegion( dword& x1, dword& y1, dword& x2, dword& y2, char* pType )
+    def getScreenRegion(self):
+        cdef char * pType = <char *>malloc(sizeof(char[128]))
+        cdef dword x1 = 0
+        cdef dword y1 = 0
+        cdef dword x2 = 0
+        cdef dword y2 = 0
+        self.thisptr.getScreenRegion(x1,y1,x2,y2,pType)
+        res =  {'x1': x1, 'x2': x2, 'y1': y1,'y2': y2, 'pType': pType}
+        free(pType)
+        return res
 
     #byte setCutPlanes( real zNear, real zFar, bool enabled )
-    #byte getCutPlanes( real& zNear, real& zFar, bool& enabled )
+    def setCutPlanes(self, real zNear, real zFar, bool enabled):
+        self.thisptr.setCutPlanes(zNear, zFar, enabled)
 
+    #byte getCutPlanes( real& zNear, real& zFar, bool& enabled )
+    def getCutPlanes(self):
+        """
+        Method:      getCutPlanes() -> (zNear,zFar,enabled)
+        Description: Get cut planes of the camera ( 0.0 - 1e7 ) Default = 0.0
+        """
+        cdef real zNear = 0
+        cdef real zFar = 0
+        cdef bool enabled = 0
+        self.thisptr.getCutPlanes(zNear,zFar,enabled)
+        return zNear, zFar, enabled
 
 
     # Method:    get/setCustomBokeh.^M
@@ -522,7 +648,16 @@ cdef class camera:
     #              angle: angle in radians^M
     #              enabled: sets the custom bokeh on/off^M
     #byte    setCustomBokeh( const_real& ratio, const_real& angle, bool enabled )
+    def setCustomBokeh(self, real ratio, real angle, bool enabled):
+        self.thisptr.setCustomBokeh(ratio,angle,enabled)
+
     #byte    getCustomBokeh( real& ratio, real& angle, bool& enabled )
+    def getCustomBokeh(self):
+        cdef real ratio = 0
+        cdef real angle = 0
+        cdef bool enabled = 0
+        self.thisptr.getCustomBokeh(ratio,angle,enabled)
+        return ratio, angle, enabled
 
     # Method:    set/getHide. sets/gets the hidden status of this camera (used only in Maxwell Studio)^M
     #byte    setHide( bool hide )
@@ -535,8 +670,6 @@ cdef class camera:
     # Method:    get/setUserData  (Not used in plugins)^M
     #byte    setUserData( void* pData )
     #byte    getUserData( void** pData )
-
-    # Method:    setActive. Sets the active camera used when rendering when there is more than one^M
 
 
     
