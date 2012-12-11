@@ -230,6 +230,7 @@ cdef extern from "h/maxwell.h":
                 Cobject next()
 
             Cobject()
+            byte setPointer( Cmaxwell* pMaxwell, void* pObject )
             byte free()
             byte getName(char** pName)
             byte setName(const_char* pName)
@@ -541,40 +542,18 @@ cdef class maxwell:
         cdef Cmaxwell.Cobject.Citerator it
         cdef Cmaxwell.Cobject o = it.first(self.thisptr)
         while o.isNull() == <byte>0:
-            yield _t_Object(&o)
+            yield _t_Object_from_pointer(self.thisptr, <Cmaxwell.Cobject *>o.getPointer())
             o = it.next()
 
+    #broken need a way to get the actual object pointer
     def getMaterialsIterator(self):
-        #return ObjectIterator(self)
+        #    #return ObjectIterator(self)
         cdef Cmaxwell.Cmaterial.Citerator it
         cdef Cmaxwell.Cmaterial m = it.first(self.thisptr)
         while m.isNull() == <byte>0:
-            yield _t_Material(&m)
+            yield _t_Material(m)
             m = it.next()
 
-
-cdef class ObjectIterator:
-    cdef Cmaxwell.Cobject.Citerator * it
-    cdef Cmaxwell.Cobject o
-
-    def __cinit__(self, maxwell m):
-        self.it = new Cmaxwell.Cobject.Citerator()
-        print("created object iterator")
-        self.o = self.it.first(m.thisptr)
-
-    def __next__(self):
-        self.o = self.it.next()
-        if self.o.isNull():
-            print("iteration done")
-            raise StopIteration
-        return _t_Object(&self.o)
-
-    def __iter__(self):
-        return self
-
-    def __dealloc__(self):
-        print("destroy iterator")
-        del self.it
 
 
 
@@ -653,12 +632,18 @@ cdef object _t_Vector(Cvector *p):
 
 cdef class Object:
     cdef Cmaxwell.Cobject *thisptr
+    cdef Cmaxwell *sceneptr
 
     def __cinit__(self):
         pass
 
     def __dealloc__(self):
         pass
+
+    cdef setPointer(self,Cmaxwell * m, void* p):
+        self.thisptr = new Cmaxwell.Cobject()
+        self.sceneptr = m
+        self.thisptr.setPointer(m,p)
 
     #def free(self):
     #    self.thisptr.free()
@@ -685,7 +670,7 @@ cdef class Object:
 
     def getInstanced(self):
         res = self.thisptr.getInstanced()
-        return _t_Object(&res)
+        return _t_Object_from_pointer(self.sceneptr,  res.getPointer())
 
     def isRFRK(self):
         cdef byte res = 0
@@ -696,14 +681,14 @@ cdef class Object:
         return self.thisptr.isNull()
 
 
-cdef object _t_Object(Cmaxwell.Cobject *p):
+cdef object _t_Object_from_pointer(Cmaxwell* m,void *p):
     res = Object()
-    res.thisptr = p
+    res.setPointer(m,p)
     return res
 
 
 cdef class Material:
-    cdef Cmaxwell.Cmaterial *thisptr
+    cdef Cmaxwell.Cmaterial thisptr
 
     def __cinit__(self):
         pass
@@ -718,10 +703,11 @@ cdef class Material:
     def getName(self):
         return self.thisptr.getName().decode('UTF-8')
 
-cdef object _t_Material(Cmaxwell.Cmaterial *p):
+cdef object _t_Material(Cmaxwell.Cmaterial p):
     res = Material()
-    res.thisptr = p
+    res.thisptr = p.createCopy()
     return res
+
 '''
 # Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
 byte isRFRK( byte& isRfrk )
