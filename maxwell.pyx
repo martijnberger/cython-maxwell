@@ -653,7 +653,7 @@ cdef class Object:
         self.thisptr.setName(c_string)
 
     def getName(self):
-        cdef char* name = <char*>malloc(sizeof(char[256]))
+        cdef char* name
         self.thisptr.getName(&name)
         res = name.decode('UTF-8')
         return res
@@ -673,6 +673,7 @@ cdef class Object:
         return _t_Object_from_pointer(self.sceneptr,  res.getPointer())
 
     def isRFRK(self):
+        # Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
         cdef byte res = 0
         res = self.thisptr.isRFRK(res)
         return res
@@ -680,33 +681,52 @@ cdef class Object:
     def isNull(self):
         return self.thisptr.isNull()
 
+    # Method:    get/setProxyPath. Get/sets the scene file referenced by this object
+    def getReferencedScenePath(self):
+        return self.thisptr.getReferencedScenePath().decode('UTF-8')
 
-cdef object _t_Object_from_pointer(Cmaxwell* m,void *p):
-    res = Object()
-    res.setPointer(m,p)
-    return res
+    def setReferencedScenePath(self, const_char* proxyPath):
+        res = self.thisptr.setReferencedScenePath(proxyPath)
 
+    def getParent(self):
+        cdef Cmaxwell.Cobject p
+        cdef Cmaxwell.Cobject* p_p
+        bv = self.thisptr.getParent(p)
+        p_p = <Cmaxwell.Cobject *>p.getPointer()
+        if <size_t>p_p != 0 and p_p.isNull() == 0:
+            res = _t_Object_from_pointer(self.sceneptr, p_p)
+            return res
+        else:
+            return False
 
-cdef class Material:
-    cdef Cmaxwell.Cmaterial thisptr
-
-    def __cinit__(self):
+    def setParent(self, parent):
         pass
 
-    def __dealloc__(self):
+
+    # Method:    getters/setters to set the mesh properties of the Cobject
+    def getNumVertexes(self):
+        #byte    getNumVertexes( dword& nVertexes )
+        cdef dword b = 0
+        self.thisptr.getNumVertexes(b)
+        return b
+
+    def getNumTriangles(self):
+        #byte    getNumTriangles( dword& nTriangles )
         pass
 
-    def setName(self, name):
-        cdef const_char *c_string = name
-        self.thisptr.setName(c_string)
+    def getNumNormals(self):
+        #byte    getNumNormals( dword& nNormals )
+        pass
 
-    def getName(self):
-        return self.thisptr.getName().decode('UTF-8')
+    def getNumPositionsPerVertex(self):
+        #byte    getNumPositionsPerVertex( dword& nPositions )
+        pass
 
-cdef object _t_Material(Cmaxwell.Cmaterial p):
-    res = Material()
-    res.thisptr = p.createCopy()
-    return res
+    def getNumChannelsUVW(self):
+        #byte    getNumChannelsUVW( dword& nChannelsUVW )
+        pass
+
+
 
 '''
 # Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
@@ -724,9 +744,6 @@ byte setRFRKParameters( const_char* binSeqNames, const_char* rwName, char* subst
                                                                                real splash, real maxVelocity, int axis, real fps, int frame, int offset, bool flipNorm,\
                                                                                                                                                               int rwTesselation, bool mb, real mbCoef )
 
-# Method:    get/setProxyPath. Get/sets the scene file referenced by this object
-const_char* getReferencedScenePath()
-byte setReferencedScenePath( const_char* proxyPath )
 
 # Method:    get/setReferenceMaterial. Get/sets the material of an specific object inside the referenced scene
 byte getReferencedSceneMaterial( const_char* objectName, Cmaterial& material )
@@ -762,12 +779,7 @@ byte    setProperties( byte doDirectCausticsReflection, byte doDirectCausticsRef
 
 byte  getDependencies( dword& numDependencies, char** & paths, const_bool& searchInsideProxy )
 
-# Method:    getters/setters to set the mesh properties of the Cobject
-byte    getNumVertexes( dword& nVertexes )
-byte    getNumTriangles( dword& nTriangles )
-byte    getNumNormals( dword& nNormals )
-byte    getNumPositionsPerVertex( dword& nPositions )
-byte    getNumChannelsUVW( dword& nChannelsUVW )
+
 
 byte    addChannelUVW( dword& index, byte id)
 byte    generateSphericalUVW( dword& iChannel, Cbase& projectorBase,\
@@ -930,6 +942,32 @@ byte getGeometryProceduralExtensionParams( MXparamList*& extensionParams )
 
 byte getGeometryModifierExtensionsNumber( dword& numModifierExtensions )
 byte getGeometryModifierExtensionParamsAtIndex( MXparamList*& extensionParams, dword modifierExtensionsIndex )'''
+
+cdef object _t_Object_from_pointer(Cmaxwell* m,void *p):
+    res = Object()
+    res.setPointer(m,p)
+    return res
+
+cdef class Material:
+    cdef Cmaxwell.Cmaterial thisptr
+
+    def __cinit__(self):
+        pass
+
+    def __dealloc__(self):
+        pass
+
+    def setName(self, name):
+        cdef const_char *c_string = name
+        self.thisptr.setName(c_string)
+
+    def getName(self):
+        return self.thisptr.getName().decode('UTF-8')
+
+cdef object _t_Material(Cmaxwell.Cmaterial p):
+    res = Material()
+    res.thisptr = p.createCopy()
+    return res
 
 cdef class camera:
     cdef Cmaxwell.Ccamera thisptr
