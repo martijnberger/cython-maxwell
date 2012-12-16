@@ -11,8 +11,7 @@ from maxwell cimport Cmaxwell, byte, const_CoptionsReadMXS
 #from maxwell cimport *
 
 cdef byte mwcallback(byte isError, const_char *pMethod, const_char *pError, const_void *pValue):
-    print("{} {}".format(<char*>pMethod,<char*>pError))
-    return isError
+    raise Exception("{} {}".format(<char*>pMethod,<char*>pError))
 
 cdef class maxwell:
     cdef Cmaxwell *thisptr
@@ -58,20 +57,25 @@ cdef class maxwell:
         cdef Cmaxwell.Cmaterial.Citerator it
         cdef Cmaxwell.Cmaterial m = it.first(self.thisptr)
         while m.isNull() == <byte>0:
-            yield _t_Material(m)
+            yield _t_Material_(m.createCopy())
             m = it.next()
-
-
 
 
 cdef class point:
     cdef Cmaxwell.Cpoint *thisptr
+    cdef bool cleanup
 
-    def __init__(self):
+    def __cinit__(self, bool __cleanup=True, __init=True):
+        if __init:
+            self.thisptr = new Cmaxwell.Cpoint()
+        self.cleanup = __cleanup
+
+    def __init__(self, __cleanup=True, __init=True):
         self.thisptr = new Cvector()
 
     def __dealloc__(self):
-        del self.thisptr
+        if self.cleanup:
+            del self.thisptr
 
     def __str__(self):
         return "point [{} {} {}]".format(self.x,self.y, self.z )
@@ -100,18 +104,17 @@ cdef object _t_Point(Cpoint *p):
 
 cdef class Vector:
     cdef Cvector *thisptr
-    cdef bool __skipfree
+    cdef bool cleanup
 
-    def __cinit__(self, __skipfree=False):
+    def __cinit__(self, bool cleanup=True):
         self.thisptr = new Cvector()
-        self.__skipfree = __skipfree
+        self.cleanup = cleanup
 
-    def __init__(self, __skipfree=False):
-        self.thisptr = new Cvector()
-        self.__skipfree = __skipfree
+    def __init__(self, cleanup=True):
+        pass
 
     def __dealloc__(self):
-        if not self.__skipfree:
+        if self.cleanup:
             del self.thisptr
 
     def __str__(self):
@@ -138,8 +141,8 @@ cdef class Vector:
         def __set__(self, z): self.thisptr.z = z
 
 
-cdef object _t_Vector(Cvector *p, __skipfree=False):
-    res = Vector(__skipfree=__skipfree)
+cdef object _t_Vector(Cvector *p, cleanup=True):
+    res = Vector(cleanup=cleanup)
     del res.thisptr # till i find a better way to do things we have some double allocation going on
     res.thisptr = p
     return res
@@ -174,28 +177,28 @@ cdef class Base:
     __repr__ = __str__
     
     property origin:
-        def __get__(self): return _t_Vector(&self.thisptr.origin,True)
+        def __get__(self): return _t_Vector(&self.thisptr.origin,False)
         def __set__(self, Vector origin):
             self.thisptr.origin.x = origin.x
             self.thisptr.origin.y = origin.y
             self.thisptr.origin.z = origin.z
 
     property x:
-        def __get__(self): return _t_Vector(&self.thisptr.xAxis,True)
+        def __get__(self): return _t_Vector(&self.thisptr.xAxis,False)
         def __set__(self, Vector x):
             self.thisptr.xAxis.x = x.x
             self.thisptr.xAxis.y = x.y
             self.thisptr.xAxis.z = x.z
 
     property y:
-        def __get__(self): return _t_Vector(&self.thisptr.yAxis,True)
+        def __get__(self): return _t_Vector(&self.thisptr.yAxis,False)
         def __set__(self, Vector y):
             self.thisptr.yAxis.x = y.x
             self.thisptr.yAxis.y = y.y
             self.thisptr.yAxis.z = y.z
 
     property z:
-        def __get__(self): return _t_Vector(&self.thisptr.zAxis,True)
+        def __get__(self): return _t_Vector(&self.thisptr.zAxis,False)
         def __set__(self, Vector z): self.thisptr.zAxis = deref(z.thisptr)
 
 
@@ -317,7 +320,61 @@ cdef class Object:
         self.thisptr.getBaseAndPivot(deref(base),deref(pivot),substepTime)
         return _t_Base(base), _t_Base(pivot)
 
+    # Method:    get/setMaterial. Material applied to the object
+    #byte    getMaterial( Cmaterial& material )
+    def getMaterial(self):
+        cdef Cmaxwell.Cmaterial* material = <Cmaxwell.Cmaterial*>malloc(sizeof(Cmaxwell.Cmaterial))
+        self.thisptr.getMaterial(deref(material))
+        return _t_Material(material)
 
+    #byte    setMaterial( Cmaterial material )
+    def setMaterial(self, Material m):
+        self.thisptr.setMaterial(deref(m.thisptr))
+
+    #byte    getVertex( dword iVertex, dword iPosition, Cpoint& point )
+    def getVertex(self, dword iVertex, dword iPosition):
+        cdef Cpoint* p = <Cmaxwell.Cpoint *>malloc(sizeof(Cpoint))
+        res = self.thisptr.getVertex(iVertex,iPosition, deref(p))
+        if res == 0:
+            raise IndexError('Vertex out of range')
+        return _t_Point(p)
+
+    #byte    setVertex( dword iVertex, dword iPosition, const_Cpoint& point )
+    def setVertex(self, dword iVertex, dword iPosition, point p):
+        self.thisptr.setVertex(iVertex,iPosition,<const_Cpoint>deref(p.thisptr))
+        p.cleanup = False # make sure we dont free the Cpoint when we promised not to
+
+    #byte    getNormal( dword iNormal, dword iPosition, Cvector& normal )
+    def getNormal(self, dword iNormal, dword iPosition):
+        cdef Cvector* v = <Cvector *>malloc(sizeof(Cvector))
+        res = self.thisptr.getNormal(iNormal, iPosition, deref(v))
+        if res == 0:
+            raise IndexError('Normal out of range')
+        return _t_Vector(v)
+
+    #byte    setNormal( dword iNormal, dword iPosition, const_Cvector& normal )
+    def setNormal(self, dword iNormal, dword iPosition, Vector v):
+        self.thisptr.setNormal(iNormal,iPosition, <const_Cvector> deref(v.thisptr))
+        v.cleanup = False
+
+#byte    getTriangle( dword iTriangle, dword& iVertex1, dword& iVertex2, dword& iVertex3,\
+#                           dword& iNormal1, dword& iNormal2, dword& iNormal3 )
+#byte    setTriangle( dword iTriangle, dword iVertex1, dword iVertex2, dword iVertex3,\
+#                                                                            dword iNormal1, dword iNormal2, dword iNormal3 )
+
+#byte    getTriangleGroup( dword iTriangle, dword& idGroup )
+#byte    setTriangleGroup( dword iTriangle, dword idGroup )
+
+#byte    getTriangleUVW( dword iTriangle, dword iChannelID, float& u1, float& v1, float& w1,\
+#                                               float& u2, float& v2, float& w2, float& u3, float& v3, float& w3 )
+#byte    setTriangleUVW( dword iTriangle, dword iChannelID, float u1, float v1, float w1,\
+#                                                                                     float u2, float v2, float w2, float u3, float v3, float w3 )
+
+#byte    getTriangleMaterial( dword iTriangle, Cmaterial& material )
+#byte    setTriangleMaterial( dword iTriangle, Cmaterial material )
+
+#byte    getGroupMaterial( dword iGroup, Cmaterial& material )
+#byte    setGroupMaterial( dword iGroup, Cmaterial material )
 
 '''
 # Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
@@ -358,9 +415,7 @@ byte    setParent( Cobject parent )
 const_char* getUuid( )
 byte    setUuid( const_char* pUuid )
 
-# Method:    get/setMaterial. Material applied to the object
-byte    getMaterial( Cmaterial& material )
-byte    setMaterial( Cmaterial material )
+
 
 # Method:    get/setProperties. Caustics properties of the object
 byte    getProperties( byte& doDirectCausticsReflection, byte& doDirectCausticsRefraction,\
@@ -539,7 +594,7 @@ cdef object _t_Object_from_pointer(Cmaxwell* m,void *p):
     return res
 
 cdef class Material:
-    cdef Cmaxwell.Cmaterial thisptr
+    cdef Cmaxwell.Cmaterial* thisptr
 
     def __cinit__(self):
         pass
@@ -554,9 +609,14 @@ cdef class Material:
     def getName(self):
         return self.thisptr.getName().decode('UTF-8')
 
-cdef object _t_Material(Cmaxwell.Cmaterial p):
+cdef object _t_Material(Cmaxwell.Cmaterial* p):
     res = Material()
-    res.thisptr = p.createCopy()
+    res.thisptr = p
+    return res
+
+cdef object _t_Material_(Cmaxwell.Cmaterial p):
+    res = Material()
+    res.thisptr = &p
     return res
 
 cdef class camera:
