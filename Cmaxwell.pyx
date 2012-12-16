@@ -1,7 +1,8 @@
-from maxwell cimport *
 from cython.operator cimport dereference as deref, preincrement as inc
 from libc.string cimport const_char, const_void
 from libc.stdlib cimport malloc, free
+
+from maxwell cimport *
 
 cdef byte mwcallback(byte isError, const_char *pMethod, const_char *pError, const_void *pValue):
     print("{} {}".format(<char*>pMethod,<char*>pError))

@@ -1,49 +1,11 @@
-from cython.operator cimport dereference as deref, preincrement as inc
 from libc.string cimport const_char, const_void
-from libc.stdlib cimport malloc, free
-
-cimport cpython
 
 ctypedef unsigned int dword
 ctypedef unsigned short word
 ctypedef double real
 
-cdef extern from "h/vectors.h":
-    ctypedef int byte "byte"
-    cdef cppclass Cvector2DT[Cprecision]:
-        Cvector2DT()
-    cdef cppclass Cvector3DT[Cprecision]:
-        Cprecision x, y, z, r, g, b, u, v, w
-        Cvector3DT()
-        Cvector3DT(Cprecision _x, Cprecision _y, Cprecision _z)
-        byte isNull()
-        setZero()
-
-
-
-    ctypedef Cvector2DT[float] CfVector2D
-    ctypedef Cvector2DT[double] Cvector2D
-    ctypedef Cvector3DT[float] CfVector
-    ctypedef Cvector3DT[double] Cvector
-    ctypedef Cvector2D Cpoint2D
-    ctypedef CfVector2D CfPoint2D
-    ctypedef Cvector Cpoint
-    ctypedef CfVector CfPoint
-
-
-cdef extern from "h/base.h":
-    ctypedef Cvector3DT CbaseVector "Cvector3DT<Cprecision>"
-    cdef cppclass CbaseT[Cprecicion]:
-        CbaseT()
-        CvaseT(CbaseVector& _origin, CbaseVector& _xAxis, CbaseVector& _yAxis, CbaseVector& _zAxis )
-        initCanonical( )
-        Cvector3DT[Cprecicion] origin
-        Cvector3DT[Cprecicion] xAxis
-        Cvector3DT[Cprecicion] yAxis
-        Cvector3DT[Cprecicion] zAxis
-    ctypedef CbaseT[double] Cbase
-    ctypedef CbaseT[float] CfBase
-
+from vectors cimport *
+from base cimport *
 
 cdef extern from "h/color.h":
     ctypedef int byte "byte"
