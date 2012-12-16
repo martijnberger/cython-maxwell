@@ -11,7 +11,6 @@ from base cimport *
 from color cimport *
 
 
-
 cdef extern from "h/flags.h":
     cdef cppclass Cflags[Cprecision]:
         Cflags()

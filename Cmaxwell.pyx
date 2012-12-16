@@ -4,7 +4,11 @@ from cython.operator cimport dereference as deref, preincrement as inc
 from libc.string cimport const_char, const_void
 from libc.stdlib cimport malloc, free
 
-from maxwell cimport *
+from vectors cimport *
+from base cimport *
+from color cimport *
+from maxwell cimport Cmaxwell, byte, const_CoptionsReadMXS
+#from maxwell cimport *
 
 cdef byte mwcallback(byte isError, const_char *pMethod, const_char *pError, const_void *pValue):
     print("{} {}".format(<char*>pMethod,<char*>pError))
@@ -14,7 +18,7 @@ cdef class maxwell:
     cdef Cmaxwell *thisptr
 
     def __cinit__(self):
-        self.thisptr = new Cmaxwell(mwcallback)
+        self.thisptr = new Cmaxwell(&mwcallback)
 
     def __dealloc__(self):
         del self.thisptr
@@ -142,6 +146,9 @@ cdef object _t_Vector(Cvector *p, __skipfree=False):
 
 
 cdef class Base:
+    '''
+        Wrapper for CBase
+    '''
     cdef Cbase *thisptr
 
     def __cinit__(self, __skip_creation=False):
@@ -156,11 +163,16 @@ cdef class Base:
         del self.thisptr
 
     def set(self, Vector origin, Vector x, Vector y, Vector z):
-        self.thisptr.origin
+        self.origin = origin
+        self.x = x
+        self.y = y
+        self.z = z
 
     def __str__(self):
         return "Base : origin: {} {} {}".format(self.origin.x,self.origin.y,self.origin.z)
 
+    __repr__ = __str__
+    
     property origin:
         def __get__(self): return _t_Vector(&self.thisptr.origin,True)
         def __set__(self, Vector origin):
