@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from libc.string cimport const_char, const_void
 
 ctypedef unsigned int dword
@@ -6,56 +8,8 @@ ctypedef double real
 
 from vectors cimport *
 from base cimport *
+from color cimport *
 
-cdef extern from "h/color.h":
-    ctypedef int byte "byte"
-    ctypedef int bool "bool"
-    cdef cppclass Crgb
-    cdef cppclass Cxyz
-    cdef cppclass Chsv
-    cdef cppclass Cyiq
-    cdef cppclass CspectrumComplete
-    cdef cppclass Cspectrum
-
-    cdef cppclass Crgb8T[Cprecision]:
-        assign(Cprecision cr, Cprecision cg, Cprecision cb)
-
-    cdef cppclass Crgba8T[Cprecision]:
-        assign(Cprecision cr, Cprecision cg, Cprecision cb, Cprecision ca)
-
-    cdef cppclass Crgb8(Crgb8T[byte]):
-        toRGB(Crgb &rgb)
-        setZero()
-        dword getSummatory()
-        bool isZero()
-
-    cdef cppclass Crgb16(Crgb8T[word]):
-        toRGB(Crgb &rgb)
-        toRGB8(Crgb &rgb)
-        dword getSummatory()
-
-    cdef cppclass Crgba8(Crgba8T[byte]):
-        pass
-
-    cdef cppclass Crdba16(Crgba8T[word]):
-        setZero()
-
-    cdef cppclass Crgb(Cvector3DT[float]):
-        dword get()
-        gammaCorrectionRec709(real gamma)
-        invGammaCorrectionRec709( real gamma )
-        toRGB8( Crgb8 &rgb8 )
-        toRGB16( Crgb16 &rgb16 )
-        toXYZ( Cxyz &xyz )
-        toHSV( Chsv *pHSV ) # devuelve: h entre [0,360], s entre[0,1], v entre[0,1]
-        toHsv( float *h, float *s, float *v )
-        toYIQ( Cyiq &yiq )
-        toReflectanceSpectrum( CspectrumComplete *pSpectrum, real maxReflectance )
-        toReflectanceSpectrum( Cspectrum &s, real maxReflectance )
-        clip( )
-        bool constrain( )
-    cdef cppclass Cxyz(Cvector3DT[double]):
-        toRGB(Crgb &rgb)
 
 
 cdef extern from "h/flags.h":
@@ -102,16 +56,16 @@ cdef extern from "h/maxwell.h":
         cppclass Ccamera(Cpointer):
             cppclass Citerator:
                 Citerator()
-                Ccamera fist(Cmaxwell* pMaxwell)
-                Ccamera next()
+                Cmaxwell.Ccamera fist(Cmaxwell* pMaxwell)
+                Cmaxwell.Ccamera next()
             Ccamera()
             byte setStep(dword iStep, Cpoint origin, Cpoint focalPoint, Cvector up, real focalLength, real fStop, real stepTime, byte focalLengthNeedCorrection )
             byte getStep( dword iStep, Cpoint& origin, Cpoint& focalPoint, Cvector& up, real& focalLength, real& fStop, real& stepTime )
             byte setOrthoValues( dword iStep, real orthoX, real orthoY, real orthoZoom, real focalLength, real fStop )
             byte getOrthoValues( dword iStep, real& orthoX, real& orthoY, real& orthoZoom, real& focalLength, real& fStop )
-            const_char* getValues( dword& nSteps, real& shutter, real& filmWidth, real& filmHeight, real& iso, \
-                                   const_char** pDiaphragmType, real& angle, dword& nBlades, \
-                                   dword& fps, dword& xRes, dword& yRes, real& pixelAspect, \
+            const_char* getValues( dword& nSteps, real& shutter, real& filmWidth, real& filmHeight, real& iso,
+                                   const_char** pDiaphragmType, real& angle, dword& nBlades,
+                                   dword& fps, dword& xRes, dword& yRes, real& pixelAspect,
                                    byte& projectionType )
             byte setName( const_char* pName )
             const_char* getName()
@@ -179,10 +133,10 @@ cdef extern from "h/maxwell.h":
         cppclass Cmaterial(Cpointer):
             cppclass Citerator:
                 Citerator()
-                Cmaterial first(Cmaxwell* pMaxwell)
-                Cmaterial next()
+                Cmaxwell.Cmaterial first(Cmaxwell* pMaxwell)
+                Cmaxwell.Cmaterial next()
             Cmaterial()
-            Cmaterial createCopy()
+            Cmaxwell.Cmaterial createCopy()
             byte free()
             byte extract()
             byte getVersion(const_char* pFileName, float& version)
@@ -192,8 +146,8 @@ cdef extern from "h/maxwell.h":
         cppclass Cobject(Cpointer):
             cppclass Citerator:
                 Citerator()
-                Cobject first(Cmaxwell* pMaxwell)
-                Cobject next()
+                Cmaxwell.Cobject first(Cmaxwell* pMaxwell)
+                Cmaxwell.Cobject next()
 
             Cobject()
             byte setPointer( Cmaxwell* pMaxwell, void* pObject )
@@ -208,21 +162,21 @@ cdef extern from "h/maxwell.h":
             byte isInstance( byte& isInstance )
 
             # Method:    getInstanced. If this Cobject is an instance this method returns its parent object
-            Cobject getInstanced()
+            Cmaxwell.Cobject getInstanced()
 
             # Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
             byte isRFRK( byte& isRfrk )
 
             # Method:    getRFRKParameters
-            byte getRFRKParameters( char*& binSeqNames, char*& rwName, char*& substractiveField, \
-                            real& scale, real& resolution, real& polySize, real& radius, real& smooth, real& core, \
-                            real& splash, real& maxVelocity, int& axis, real& fps, int& frame, int& offset, bool& f, \
+            byte getRFRKParameters( char*& binSeqNames, char*& rwName, char*& substractiveField,
+                            real& scale, real& resolution, real& polySize, real& radius, real& smooth, real& core,
+                            real& splash, real& maxVelocity, int& axis, real& fps, int& frame, int& offset, bool& f,
                             int& rwTesselation, bool& mb, real& mbCoef )
 
 
-            byte setRFRKParameters( const_char* binSeqNames, const_char* rwName, char* substractiveField, \
-                                real scale, real resolution, real polySize, real radius, real smooth, real core, \
-                                real splash, real maxVelocity, int axis, real fps, int frame, int offset, bool flipNorm, \
+            byte setRFRKParameters( const_char* binSeqNames, const_char* rwName, char* substractiveField,
+                                real scale, real resolution, real polySize, real radius, real smooth, real core,
+                                real splash, real maxVelocity, int axis, real fps, int frame, int offset, bool flipNorm,
                                 int rwTesselation, bool mb, real mbCoef )
 
             # Method:    get/setProxyPath. Get/sets the scene file referenced by this object
@@ -230,8 +184,8 @@ cdef extern from "h/maxwell.h":
             byte setReferencedScenePath( const_char* proxyPath )
 
             # Method:    get/setReferenceMaterial. Get/sets the material of an specific object inside the referenced scene
-            byte getReferencedSceneMaterial( const_char* objectName, Cmaterial& material )
-            byte setReferencedSceneMaterial( const_char* objectName, Cmaterial material )
+            byte getReferencedSceneMaterial( const_char* objectName, Cmaxwell.Cmaterial& material )
+            byte setReferencedSceneMaterial( const_char* objectName, Cmaxwell.Cmaterial material )
 
             # Method: get/setReferencedOverrideFlags. Get the override policy for visibility flags
             # flags are described in OVERRIDE_REFERENCE_FLAGS in maxwellenums.h
@@ -252,13 +206,13 @@ cdef extern from "h/maxwell.h":
             byte    setUuid( const_char* pUuid )
 
             # Method:    get/setMaterial. Material applied to the object
-            byte    getMaterial( Cmaterial& material )
-            byte    setMaterial( Cmaterial material )
+            byte    getMaterial( Cmaxwell.Cmaterial& material )
+            byte    setMaterial( Cmaxwell.Cmaterial material )
 
             # Method:    get/setProperties. Caustics properties of the object
-            byte    getProperties( byte& doDirectCausticsReflection, byte& doDirectCausticsRefraction, \
+            byte    getProperties( byte& doDirectCausticsReflection, byte& doDirectCausticsRefraction,
                                    byte& doIndirectCausticsReflection, byte& doIndirectCausticsRefraction )
-            byte    setProperties( byte doDirectCausticsReflection, byte doDirectCausticsRefraction, \
+            byte    setProperties( byte doDirectCausticsReflection, byte doDirectCausticsRefraction,
                                    byte doIndirectCausticsReflection, byte doIndirectCausticsRefraction )
 
             byte  getDependencies( dword& numDependencies, char** & paths, const_bool& searchInsideProxy )
@@ -271,10 +225,10 @@ cdef extern from "h/maxwell.h":
             byte    getNumChannelsUVW( dword& nChannelsUVW )
 
             byte    addChannelUVW( dword& index, byte id)
-            byte    generateSphericalUVW( dword& iChannel, Cbase& projectorBase, \
-                                          real& startLatitude, real& endLatitude, \
+            byte    generateSphericalUVW( dword& iChannel, Cbase& projectorBase,
+                                          real& startLatitude, real& endLatitude,
                                           real& startLongitude, real& endLongitude )
-            byte    generateCylindricalUVW( dword& iChannel, Cbase& projectorBase, \
+            byte    generateCylindricalUVW( dword& iChannel, Cbase& projectorBase,
                                             real& startAngle, real& endAngle )
             byte    generateCubicUVW( dword& iChannel, Cbase& projectorBase, bool mirrorBackFaces)
             byte    generatePlanarUVW( dword& iChannel, Cbase& projectorBase )
@@ -286,24 +240,24 @@ cdef extern from "h/maxwell.h":
             byte    getNormal( dword iNormal, dword iPosition, Cvector& normal )
             byte    setNormal( dword iNormal, dword iPosition, const_Cvector& normal )
 
-            byte    getTriangle( dword iTriangle, dword& iVertex1, dword& iVertex2, dword& iVertex3, \
+            byte    getTriangle( dword iTriangle, dword& iVertex1, dword& iVertex2, dword& iVertex3,
                                  dword& iNormal1, dword& iNormal2, dword& iNormal3 )
-            byte    setTriangle( dword iTriangle, dword iVertex1, dword iVertex2, dword iVertex3, \
+            byte    setTriangle( dword iTriangle, dword iVertex1, dword iVertex2, dword iVertex3,
                                  dword iNormal1, dword iNormal2, dword iNormal3 )
 
             byte    getTriangleGroup( dword iTriangle, dword& idGroup )
             byte    setTriangleGroup( dword iTriangle, dword idGroup )
 
-            byte    getTriangleUVW( dword iTriangle, dword iChannelID, float& u1, float& v1, float& w1, \
+            byte    getTriangleUVW( dword iTriangle, dword iChannelID, float& u1, float& v1, float& w1,
                                     float& u2, float& v2, float& w2, float& u3, float& v3, float& w3 )
-            byte    setTriangleUVW( dword iTriangle, dword iChannelID, float u1, float v1, float w1, \
+            byte    setTriangleUVW( dword iTriangle, dword iChannelID, float u1, float v1, float w1,
                                     float u2, float v2, float w2, float u3, float v3, float w3 )
 
-            byte    getTriangleMaterial( dword iTriangle, Cmaterial& material )
-            byte    setTriangleMaterial( dword iTriangle, Cmaterial material )
+            byte    getTriangleMaterial( dword iTriangle, Cmaxwell.Cmaterial& material )
+            byte    setTriangleMaterial( dword iTriangle, Cmaxwell.Cmaterial material )
 
-            byte    getGroupMaterial( dword iGroup, Cmaterial& material )
-            byte    setGroupMaterial( dword iGroup, Cmaterial material )
+            byte    getGroupMaterial( dword iGroup, Cmaxwell.Cmaterial& material )
+            byte    setGroupMaterial( dword iGroup, Cmaxwell.Cmaterial material )
 
             byte    setBaseAndPivot( Cbase base, Cbase pivot, real substepTime)
             byte    getBaseAndPivot( Cbase& base, Cbase& pivot, const_real substepTime)
@@ -408,10 +362,10 @@ cdef extern from "h/maxwell.h":
 
             byte    generateCustomUVW( dword iChannel, dword iGeneratorType )
 
-            byte    getUVWChannelProperties( dword iChannel, byte& projType, bool& customProj, \
-                                             Cbase& projectorBase, \
-                                             real& startLatitude, real& endLatitude, \
-                                             real& startLongitude, real& endLongitude, \
+            byte    getUVWChannelProperties( dword iChannel, byte& projType, bool& customProj,
+                                             Cbase& projectorBase,
+                                             real& startLatitude, real& endLatitude,
+                                             real& startLongitude, real& endLongitude,
                                              real& startAngle, real& endAngle, bool& mirrorBackFaces )
 
             byte    getGlobalXform( Cbase& xForm )
@@ -436,7 +390,7 @@ cdef extern from "h/maxwell.h":
         Cmaxwell(byte(*callback)(byte isError, const_char *pMethod, const_char *pError, const_void *pValue))
         byte readMXS(const_char* pPath, const_CoptionsReadMXS& mxsOptions)
         byte writeMXS(const_char* pPath)
-        byte getSceneInfo(CsceneInfo& info)
+        byte getSceneInfo(Cmaxwell.CsceneInfo& info)
 
         # Method: getEngineVersion. Returns the current version of Maxwell
         getEngineVersion(char pVersion[64])
@@ -456,16 +410,16 @@ cdef extern from "h/maxwell.h":
 
         # Method:    addCamera. Adds a new camera to the scene with the given parameters^M
         # projectionType:TYPE_PERSPECTIVE, TYPE_FRONT, TYPE_TOP, TYPE_LEFT, TYPE_BACK, TYPE_BOTTOM, TYPE_RIGHT^M 
-        Ccamera addCamera( const_char* pName, dword nSteps, real shutter, real filmWidth, \
-                           real filmHeight, real iso, const_char* pDiaphragmType, real angle, \
-                           dword nBlades, dword fps, dword xRes, dword yRes, real pixelAspect, \
+        Cmaxwell.Ccamera addCamera( const_char* pName, dword nSteps, real shutter, real filmWidth,
+                           real filmHeight, real iso, const_char* pDiaphragmType, real angle,
+                           dword nBlades, dword fps, dword xRes, dword yRes, real pixelAspect,
                            byte projectionType = 0)
 
         # Method:    getCamera. Given the name of a camera this function returns its Ccamera pointer.^M
-        Ccamera getCamera( const_char* pCameraName )
+        Cmaxwell.Ccamera getCamera( const_char* pCameraName )
 
         # Method:    getActiveCamera. Returns a pointer to the active camera of the scene^M
-        Ccamera getActiveCamera()
+        Cmaxwell.Ccamera getActiveCamera()
 
 
 

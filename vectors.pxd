@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 cdef extern from "h/vectors.h":
     ctypedef int byte "byte"
     cdef cppclass Cvector2DT[Cprecision]:

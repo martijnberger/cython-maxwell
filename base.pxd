@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from vectors cimport *
 
 cdef extern from "h/base.h":

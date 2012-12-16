@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from cython.operator cimport dereference as deref, preincrement as inc
 from libc.string cimport const_char, const_void
 from libc.stdlib cimport malloc, free
