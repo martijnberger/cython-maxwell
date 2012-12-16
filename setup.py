@@ -7,7 +7,7 @@ setup(
       cmdclass = {"build_ext": build_ext},
       ext_modules = [Extension(
     "maxwell",                 # name of extension
-    ["maxwell.pyx"],           # filename of our Pyrex/Cython source
+    ["Cmaxwell.pyx"],           # filename of our Pyrex/Cython source
     language="c++",              # this causes Pyrex/Cython to create C++ source
     include_dirs=["h"],          # usual stuff
     libraries=["maxwellsdk"],             # ditto
