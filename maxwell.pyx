@@ -23,8 +23,11 @@ cdef class maxwell:
         del self.thisptr
 
     def readMXS(self, filename):
-        cdef const_char* f = filename
-        self.thisptr.readMXS(f, <const_CoptionsReadMXS>Cmaxwell.CoptionsReadMXS())
+        a = bytes(filename, "UTF-8")
+        cdef const_char* f = a
+        res = self.thisptr.readMXS(f, <const_CoptionsReadMXS>Cmaxwell.CoptionsReadMXS())
+        if res == 0:
+            raise Exception("Could not open: {}".format(filename))
 
     def writeMXS(self, filename):
         cdef const_char* f = filename
@@ -57,8 +60,19 @@ cdef class maxwell:
         cdef Cmaxwell.Cmaterial.Citerator it
         cdef Cmaxwell.Cmaterial m = it.first(self.thisptr)
         while m.isNull() == <byte>0:
-            yield _t_Material_(m.createCopy())
+            yield _t_Material_(m)
             m = it.next()
+
+    def getCamerasIterator(self):
+        #    #return ObjectIterator(self)
+        cdef Cmaxwell.Ccamera.Citerator it
+        cdef Cmaxwell.Ccamera m = it.first(self.thisptr)
+        while m.isNull() == <byte>0:
+            yield _t_Camera(m)
+            m = it.next()
+
+    def freeScene(self):
+        self.thisptr.freeScene()
 
 
 cdef class point:
@@ -239,12 +253,12 @@ cdef class Object:
     def isMesh(self):
         cdef byte res = 0
         self.thisptr.isMesh(res)
-        return res
+        return True if res == 1 else False
 
     def isInstance(self):
         cdef byte res = 0
         self.thisptr.isInstance(res)
-        return res
+        return True if res == 1 else False
 
     def getInstanced(self):
         res = self.thisptr.getInstanced()
@@ -257,7 +271,7 @@ cdef class Object:
         return res
 
     def isNull(self):
-        return self.thisptr.isNull()
+        return True if self.thisptr.isNull() == 1 else False
 
     # Method:    get/setProxyPath. Get/sets the scene file referenced by this object
     def getReferencedScenePath(self):
@@ -291,22 +305,22 @@ cdef class Object:
     def getNumTriangles(self):
         cdef dword nTriangles = 0
         res = self.thisptr.getNumTriangles( nTriangles )
-        return res
+        return nTriangles
 
     def getNumNormals(self):
         cdef dword nNormals = 0
         res = self.thisptr.getNumNormals( nNormals )
-        return res
+        return nNormals
 
     def getNumPositionsPerVertex(self):
         cdef dword nPositions = 0
         res = self.thisptr.getNumPositionsPerVertex( nPositions )
-        return res
+        return nPositions
 
     def getNumChannelsUVW(self):
         cdef dword nChannelsUVW = 0
         res = self.thisptr.getNumChannelsUVW( nChannelsUVW )
-        return res
+        return nChannelsUVW
 
     #byte    setBaseAndPivot( Cbase base, Cbase pivot, real substepTime)
     def setBaseAndPivot(self, Base base, Base pivot, real substepTime=0.0):
@@ -329,7 +343,7 @@ cdef class Object:
 
     #byte    setMaterial( Cmaterial material )
     def setMaterial(self, Material m):
-        self.thisptr.setMaterial(deref(m.thisptr))
+        self.thisptr.setMaterial(m.thisptr)
 
     #byte    getVertex( dword iVertex, dword iPosition, Cpoint& point )
     def getVertex(self, dword iVertex, dword iPosition):
@@ -357,8 +371,21 @@ cdef class Object:
         self.thisptr.setNormal(iNormal,iPosition, <const_Cvector> deref(v.thisptr))
         v.cleanup = False
 
-#byte    getTriangle( dword iTriangle, dword& iVertex1, dword& iVertex2, dword& iVertex3,\
-#                           dword& iNormal1, dword& iNormal2, dword& iNormal3 )
+    #byte    getTriangle( dword iTriangle, dword& iVertex1, dword& iVertex2, dword& iVertex3,\
+    #                           dword& iNormal1, dword& iNormal2, dword& iNormal3 )
+    def getTriangle(self, dword iTriangle):
+        cdef dword v1 = 0
+        cdef dword v2 = 0
+        cdef dword v3 = 0
+        cdef dword n1 = 0
+        cdef dword n2 = 0
+        cdef dword n3 = 0
+        res = self.thisptr.getTriangle(iTriangle, v1, v2, v3, n1, n2, n3)
+        if res == 0:
+            raise IndexError('Triangle out of range')
+        return (v1,v2,v3,n1,n2,n3)
+
+
 #byte    setTriangle( dword iTriangle, dword iVertex1, dword iVertex2, dword iVertex3,\
 #                                                                            dword iNormal1, dword iNormal2, dword iNormal3 )
 
@@ -367,10 +394,32 @@ cdef class Object:
 
 #byte    getTriangleUVW( dword iTriangle, dword iChannelID, float& u1, float& v1, float& w1,\
 #                                               float& u2, float& v2, float& w2, float& u3, float& v3, float& w3 )
+    def getTriangleUVW(self,dword iTriangle, dword iChannelID):
+        cdef float u1 = 0
+        cdef float v1 = 0
+        cdef float w1 = 0
+        cdef float u2 = 0
+        cdef float v2 = 0
+        cdef float w2 = 0
+        cdef float u3 = 0
+        cdef float v3 = 0
+        cdef float w3 = 0
+        res = self.thisptr.getTriangleUVW(iTriangle,iChannelID,u1, v1, w1, u2, v2, w2, u3, v3, w3)
+        if res == 0:
+            raise IndexError('Triangle out of range')
+        return (u1, v1, w1, u2, v2, w2, u3, v3, w3)
 #byte    setTriangleUVW( dword iTriangle, dword iChannelID, float u1, float v1, float w1,\
 #                                                                                     float u2, float v2, float w2, float u3, float v3, float w3 )
 
-#byte    getTriangleMaterial( dword iTriangle, Cmaterial& material )
+    #byte    getTriangleMaterial( dword iTriangle, Cmaterial& material )\
+    def getTriangleMaterial(self,dword iTriangle):
+        cdef Cmaxwell.Cmaterial* mat = new Cmaxwell.Cmaterial()
+        res = self.thisptr.getTriangleMaterial(iTriangle,deref(mat))
+        if res == 0:
+            raise IndexError('Material out of range')
+        return _t_Material(mat)
+
+
 #byte    setTriangleMaterial( dword iTriangle, Cmaterial material )
 
 #byte    getGroupMaterial( dword iGroup, Cmaterial& material )
@@ -436,17 +485,6 @@ byte    generateCylindricalUVW( dword& iChannel, Cbase& projectorBase,\
 byte    generateCubicUVW( dword& iChannel, Cbase& projectorBase, bool mirrorBackFaces)
 byte    generatePlanarUVW( dword& iChannel, Cbase& projectorBase )
 
-
-byte    getVertex( dword iVertex, dword iPosition, Cpoint& point )
-byte    setVertex( dword iVertex, dword iPosition, const_Cpoint& point )
-
-byte    getNormal( dword iNormal, dword iPosition, Cvector& normal )
-byte    setNormal( dword iNormal, dword iPosition, const_Cvector& normal )
-
-byte    getTriangle( dword iTriangle, dword& iVertex1, dword& iVertex2, dword& iVertex3,\
-                           dword& iNormal1, dword& iNormal2, dword& iNormal3 )
-byte    setTriangle( dword iTriangle, dword iVertex1, dword iVertex2, dword iVertex3,\
-                                                                            dword iNormal1, dword iNormal2, dword iNormal3 )
 
 byte    getTriangleGroup( dword iTriangle, dword& idGroup )
 byte    setTriangleGroup( dword iTriangle, dword idGroup )
@@ -594,12 +632,16 @@ cdef object _t_Object_from_pointer(Cmaxwell* m,void *p):
     return res
 
 cdef class Material:
-    cdef Cmaxwell.Cmaterial* thisptr
+    cdef Cmaxwell.Cmaterial thisptr
+    cdef bool cleanup
 
-    def __cinit__(self):
-        pass
+    def __cinit__(self, __cleanup=True):
+        self.cleanup = __cleanup
 
     def __dealloc__(self):
+        #if self.cleanup == True:
+        #    print("Cleanup Material: {}".format(<long> self.thisptr))
+        #    del &self.thisptr
         pass
 
     def setName(self, name):
@@ -609,14 +651,28 @@ cdef class Material:
     def getName(self):
         return self.thisptr.getName().decode('UTF-8')
 
+    def isNull(self):
+        return True if self.thisptr.isNull() == 1 else False
+
+    def getNumLayers(self):
+        cdef byte nLayers = 0
+        self.thisptr.getNumLayers(nLayers)
+        #TODO FIXME STUB
+        return nLayers
+
+    def __repr__(self):
+        return "Maxwell material:" + self.getName()
+
 cdef object _t_Material(Cmaxwell.Cmaterial* p):
-    res = Material()
-    res.thisptr = p
+    res = Material(__cleanup=False)
+    #print("_t_Material {}".format(<long> p))
+    res.thisptr = deref(p)
     return res
 
 cdef object _t_Material_(Cmaxwell.Cmaterial p):
-    res = Material()
-    res.thisptr = &p
+    res = Material(__cleanup=True)
+    cdef Cmaxwell.Cmaterial c = <Cmaxwell.Cmaterial>(p.createCopy())
+    res.thisptr = c
     return res
 
 cdef class camera:
@@ -855,3 +911,8 @@ cdef class camera:
         # Method:    get/setUserData  (Not used in plugins)^M
         #byte    setUserData( void* pData )
         #byte    getUserData( void** pData )
+
+cdef _t_Camera(Cmaxwell.Ccamera c):
+    res = camera()
+    res.thisptr = c
+    return res

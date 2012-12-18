@@ -55,7 +55,7 @@ cdef extern from "h/maxwell.h":
         cppclass Ccamera(Cpointer):
             cppclass Citerator:
                 Citerator()
-                Cmaxwell.Ccamera fist(Cmaxwell* pMaxwell)
+                Cmaxwell.Ccamera first(Cmaxwell* pMaxwell)
                 Cmaxwell.Ccamera next()
             Ccamera()
             byte setStep(dword iStep, Cpoint origin, Cpoint focalPoint, Cvector up, real focalLength, real fStop, real stepTime, byte focalLengthNeedCorrection )
@@ -139,8 +139,23 @@ cdef extern from "h/maxwell.h":
             byte free()
             byte extract()
             byte getVersion(const_char* pFileName, float& version)
+            
+            byte getNumLayers( byte& nLayers )
+            
+            byte setReference( const_byte& enabled, const_char* mxmPath )
+            const_char* getReference( byte& enabled )
+            
+            byte setDescription( const_char* pDescription )
+            const_char* getDescription( )
+            
+            byte setUuid( const_char* pUuid )
+            const_char* getUuid( )
+            
             byte setName(const_char* pFileName)
             const_char* getName()
+            
+            byte read( const_char* pFileName )
+            byte write( const_char* pFileName )
 
         cppclass Cobject(Cpointer):
             cppclass Citerator:
@@ -398,7 +413,7 @@ cdef extern from "h/maxwell.h":
         # Scene methods
         ###
         freeGeometry()
-        freeScene()
+        void freeScene()
         # Method: get/setScenePreview
         Crgb8* getSCenePreview( dword& xRes, dword& yRes)
         byte   setScebePreview( dword xRes, dword yRes, Crgb* pRGB)
