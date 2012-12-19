@@ -76,8 +76,8 @@ cdef extern from "h/maxwell.h":
             byte    setActiveWeight( CmultiValueCmap& map )
             byte    getActiveWeight( CmultiValueCmap& map )
 
-            CmaterialEmitter    createEmitter( )
-            CmaterialEmitter    getEmitter( )
+            Cmaxwell.CmaterialEmitter    createEmitter( )
+            Cmaxwell.CmaterialEmitter    getEmitter( )
             byte                freeEmitter( )
 
             byte        enableDisplacement( bool enable )
@@ -95,9 +95,9 @@ cdef extern from "h/maxwell.h":
             byte        setVectorDisplacementParameters( Cvector scale )
             byte        getVectorDisplacementParameters( Cvector& scale )
 
-            Cbsdf   addBSDF( )
+            Cmaxwell.Cbsdf   addBSDF( )
             byte    getNumBSDFs( byte& nBSDFs )
-            Cbsdf   getBSDF( byte index )
+            Cmaxwell.Cbsdf   getBSDF( byte index )
 
             void setAttribute( const_char* name, const_CmultiValueCmap& map )
             void setActiveAttribute( const_char* name, const_CmultiValueCmap& map )
@@ -107,7 +107,7 @@ cdef extern from "h/maxwell.h":
 
 
         cppclass Cbsdf(CmaterialPointer):
-            pass
+            Cbsdf()
 
         cppclass CmultiValue:
             const_char* pID
