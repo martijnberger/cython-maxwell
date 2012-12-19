@@ -30,6 +30,8 @@ cdef extern from "h/maxwell.h":
     ctypedef void* const_Cpoint "const Cpoint"
     ctypedef void* const_Cvector "const Cvector"
     ctypedef void* const_Crgb "const Crgb"
+    ctypedef void* CmultiValueCmap "CmultiValue::Cmap"
+    ctypedef void* const_CmultiValueCmap "const CmultiValue::Cmap"
 
     cdef cppclass Cmaxwell:
         cppclass Cpointer:
@@ -39,6 +41,9 @@ cdef extern from "h/maxwell.h":
 
         cppclass CmaterialPointer(Cpointer):
             CmaterialPointer()
+
+        cppclass Cbsdf:
+            Cbsdf()
 
         cppclass CmultiValue:
             #const_char* pID
@@ -51,6 +56,69 @@ cdef extern from "h/maxwell.h":
         cppclass CsceneInfo:
             dword nMeshes, nTriangles, nVertexes, nNormals, nMaterials, nBitmaps
             CsceneInfo()
+
+        cppclass CmaterialEmitter(CmaterialPointer):
+            CmaterialEmitter()
+
+        cppclass CmaterialLayer(CmaterialPointer):
+            byte    setEnabled( bool enable )
+            byte    getEnabled( bool& enabled )
+
+            byte    setName( const_char* pName )
+            byte    getName( char** pName )
+
+            byte    setStackedBlendingMode( byte mode )
+            byte    getStackedBlendingMode( byte& mode )
+
+            byte    setWeight( CmultiValueCmap& map )
+            byte    getWeight( CmultiValueCmap& map )
+
+            byte    setActiveWeight( CmultiValueCmap& map )
+            byte    getActiveWeight( CmultiValueCmap& map )
+
+            CmaterialEmitter    createEmitter( )
+            CmaterialEmitter    getEmitter( )
+            byte                freeEmitter( )
+
+            byte        enableDisplacement( bool enable )
+            byte        isDisplacementEnabled( bool& enabled )
+
+            byte        setDisplacementMap( CmultiValueCmap& map )
+            byte        getDisplacementMap( CmultiValueCmap& map )
+
+            byte        setDisplacementCommonParameters( byte displacementType, real subdivisionLevel, real smoothness, dword minLOD = 0, dword maxLOD = 0 )
+            byte        getDisplacementCommonParameters( byte& displacementType, real& subdivisionLevel, real& smoothness, dword& minLOD, dword& maxLOD )
+
+            byte        setHeightMapDisplacementParameters( real offset, real height, bool absoluteHeight, bool adaptive )
+            byte        getHeightMapDisplacementParameters( real& offset, real& height, bool& absoluteHeight, bool& adaptive )
+
+            byte        setVectorDisplacementParameters( Cvector scale )
+            byte        getVectorDisplacementParameters( Cvector& scale )
+
+            Cbsdf   addBSDF( )
+            byte    getNumBSDFs( byte& nBSDFs )
+            Cbsdf   getBSDF( byte index )
+
+            void setAttribute( const_char* name, const_CmultiValueCmap& map )
+            void setActiveAttribute( const_char* name, const_CmultiValueCmap& map )
+
+            byte getAttribute( const_char* name, CmultiValueCmap& map )
+            byte getActiveAttribute( const_char* name, CmultiValueCmap& map )
+
+
+        cppclass Cbsdf(CmaterialPointer):
+            pass
+
+        cppclass CmultiValue:
+            const_char* pID
+            const_char* pType
+            void* pParameter
+            CmultiValue(const_char* _pID, const_char* _pType, void* _pParameter)
+            cppclass Cmap:
+                byte type
+                real value
+                Crgb rgb
+                Cmap()
 
         cppclass Ccamera(Cpointer):
             cppclass Citerator:

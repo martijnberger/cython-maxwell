@@ -657,7 +657,6 @@ cdef class Material:
     def getNumLayers(self):
         cdef byte nLayers = 0
         self.thisptr.getNumLayers(nLayers)
-        #TODO FIXME STUB
         return nLayers
 
     def __repr__(self):
