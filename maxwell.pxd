@@ -30,7 +30,6 @@ cdef extern from "h/maxwell.h":
     ctypedef void* const_Cpoint "const Cpoint"
     ctypedef void* const_Cvector "const Cvector"
     ctypedef void* const_Crgb "const Crgb"
-    ctypedef void* CmultiValueCmap "CmultiValue::Cmap"
     ctypedef void* const_CmultiValueCmap "const CmultiValue::Cmap"
 
     cdef cppclass Cmaxwell:
@@ -39,17 +38,68 @@ cdef extern from "h/maxwell.h":
             bool isNull()
             void* getPointer()
 
-        cppclass CmaterialPointer(Cpointer):
-            CmaterialPointer()
-
-        cppclass Cbsdf:
-            Cbsdf()
-
         cppclass CmultiValue:
             #const_char* pID
             #const_char* pType
             #void* pParameter
-            CmultiValue(const_char* _pID = NULL, const_char* _pType = NULL, void* _pParameter = NULL)
+            CmultiValue(const_char* _pID, const_char* _pType, void* _pParameter)
+
+            cppclass Cmap:
+                byte        type
+                real        value
+                Crgb        rgb
+
+                char*       pFileName
+                Cpoint2D    scale
+                Cpoint2D    offset
+                dword       uvwChannel
+                byte        typeInterpolation
+                byte        uIsTiled
+                byte        vIsTiled
+                byte        invert
+                byte        doGammaCorrection
+                byte        useAbsoluteUnits
+                byte        normalMappingFlipRed
+                byte        normalMappingFlipGreen
+                byte        normalMappingFullRangeBlue
+                byte        useAlpha
+                float       saturation # // range: [-1.0, 1.0]
+                float       contrast #   // range: [-1.0, 1.0]
+                float       brightness # // range: [-1.0, 1.0]
+                float       clampMin #   // range: [0.0, 1.0]
+                float       clampMax #   // range: [0.0, 1.0]
+                #CextensionList     extensionList;
+                Cmap( )
+
+
+        cppclass CmaterialPointer(Cpointer):
+            CmaterialPointer()
+
+        cppclass Creflectance(CmaterialPointer):
+            Creflectance()
+
+            byte setActiveIorMode( byte complex )
+            byte getActiveIorMode( byte& complex )
+
+            byte setComplexIor( const_char* pFileName )
+            const_char* getComplexIor( )
+
+            byte getColor( const_char* pID, Cmaxwell.CmultiValue.Cmap& map )
+        cppclass Cbsdf(CmaterialPointer):
+            Cbsdf()
+            byte    setName( const_char* pName )
+            char*   getName( )
+
+            byte    setState( bool enabled )
+            byte    getState( bool& enabled )
+
+            byte    setWeight( Cmaxwell.CmultiValue.Cmap& map )
+            byte    getWeight( Cmaxwell.CmultiValue.Cmap& map )
+            byte    setActiveWeight( Cmaxwell.CmultiValue.Cmap& map )
+            byte    getActiveWeight( Cmaxwell.CmultiValue.Cmap& map )
+            Cmaxwell.Creflectance  getReflectance( )
+
+
         cppclass CoptionsReadMXS(Cflags):
             CoptionsReadMXS()
 
@@ -61,6 +111,7 @@ cdef extern from "h/maxwell.h":
             CmaterialEmitter()
 
         cppclass CmaterialLayer(CmaterialPointer):
+            CmaterialLayer()
             byte    setEnabled( bool enable )
             byte    getEnabled( bool& enabled )
 
@@ -70,11 +121,11 @@ cdef extern from "h/maxwell.h":
             byte    setStackedBlendingMode( byte mode )
             byte    getStackedBlendingMode( byte& mode )
 
-            byte    setWeight( CmultiValueCmap& map )
-            byte    getWeight( CmultiValueCmap& map )
+            byte    setWeight( Cmaxwell.CmultiValue.Cmap& map )
+            byte    getWeight( Cmaxwell.CmultiValue.Cmap& map )
 
-            byte    setActiveWeight( CmultiValueCmap& map )
-            byte    getActiveWeight( CmultiValueCmap& map )
+            byte    setActiveWeight( Cmaxwell.CmultiValue.Cmap& map )
+            byte    getActiveWeight( Cmaxwell.CmultiValue.Cmap& map )
 
             Cmaxwell.CmaterialEmitter    createEmitter( )
             Cmaxwell.CmaterialEmitter    getEmitter( )
@@ -83,8 +134,8 @@ cdef extern from "h/maxwell.h":
             byte        enableDisplacement( bool enable )
             byte        isDisplacementEnabled( bool& enabled )
 
-            byte        setDisplacementMap( CmultiValueCmap& map )
-            byte        getDisplacementMap( CmultiValueCmap& map )
+            byte        setDisplacementMap( Cmaxwell.CmultiValue.Cmap& map )
+            byte        getDisplacementMap( Cmaxwell.CmultiValue.Cmap& map )
 
             byte        setDisplacementCommonParameters( byte displacementType, real subdivisionLevel, real smoothness, dword minLOD = 0, dword maxLOD = 0 )
             byte        getDisplacementCommonParameters( byte& displacementType, real& subdivisionLevel, real& smoothness, dword& minLOD, dword& maxLOD )
@@ -102,12 +153,12 @@ cdef extern from "h/maxwell.h":
             void setAttribute( const_char* name, const_CmultiValueCmap& map )
             void setActiveAttribute( const_char* name, const_CmultiValueCmap& map )
 
-            byte getAttribute( const_char* name, CmultiValueCmap& map )
-            byte getActiveAttribute( const_char* name, CmultiValueCmap& map )
+            byte getAttribute( const_char* name, Cmaxwell.CmultiValue.Cmap& map )
+            byte getActiveAttribute( const_char* name, Cmaxwell.CmultiValue.Cmap& map )
 
 
-        cppclass Cbsdf(CmaterialPointer):
-            Cbsdf()
+
+
 
         cppclass CmultiValue:
             const_char* pID
@@ -209,6 +260,7 @@ cdef extern from "h/maxwell.h":
             byte getVersion(const_char* pFileName, float& version)
             
             byte getNumLayers( byte& nLayers )
+            Cmaxwell.CmaterialLayer getLayer( byte index )
             
             byte setReference( const_byte& enabled, const_char* mxmPath )
             const_char* getReference( byte& enabled )

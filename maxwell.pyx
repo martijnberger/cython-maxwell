@@ -659,6 +659,10 @@ cdef class Material:
         self.thisptr.getNumLayers(nLayers)
         return nLayers
 
+    def getLayer(self, byte index):
+        cdef Cmaxwell.CmaterialLayer l = self.thisptr.getLayer(index)
+        return _t_MaterialLayer(l)
+
     def __repr__(self):
         return "Maxwell material:" + self.getName()
 
@@ -673,6 +677,62 @@ cdef object _t_Material_(Cmaxwell.Cmaterial p):
     cdef Cmaxwell.Cmaterial c = <Cmaxwell.Cmaterial>(p.createCopy())
     res.thisptr = c
     return res
+
+cdef class MaterialLayer:
+    cdef Cmaxwell.CmaterialLayer thisptr
+
+    def getNumBSDFs(self):
+        cdef byte nBSDFs = 0
+        res =  self.thisptr.getNumBSDFs( nBSDFs )
+        if res == 0:
+            raise Exception("Cmaxwell error")
+        return res
+    def getBSDF(self,byte index):
+        #Cmaxwell.Cbsdf   getBSDF( byte index )
+        return _t_BSDF(self.thisptr.getBSDF(index))
+
+cdef object _t_MaterialLayer(Cmaxwell.CmaterialLayer l):
+    res = MaterialLayer()
+    res.thisptr = l
+    return res
+
+cdef class BSDF:
+    cdef Cmaxwell.Cbsdf thisptr
+
+    def getReflectance(self):
+        res =  _t_Reflectance(self.thisptr.getReflectance())
+        return res
+
+cdef object _t_BSDF(Cmaxwell.Cbsdf b):
+    res = BSDF()
+    res.thisptr = b
+    return res
+
+cdef class Reflectance:
+    cdef Cmaxwell.Creflectance thisptr
+
+    def getColor(self, const_char* pID):
+        cdef Cmaxwell.CmultiValue.Cmap* map = new Cmaxwell.CmultiValue.Cmap()
+        res = self.thisptr.getColor(pID, deref(map))
+        if res == 0:
+            raise Exception("getColor failed")
+        return _t_MultiValueMap(map)
+
+
+cdef object _t_Reflectance(Cmaxwell.Creflectance r):
+    res = Reflectance()
+    res.thisptr = r
+    return res
+
+cdef class MultiValueMap:
+    cdef Cmaxwell.CmultiValue.Cmap thisprt
+
+
+
+cdef object _t_MultiValueMap(Cmaxwell.CmultiValue.Cmap* m):
+   res = MultiValueMap()
+   res.thisprt = deref(m)
+   return res
 
 cdef class camera:
     cdef Cmaxwell.Ccamera thisptr
