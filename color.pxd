@@ -23,6 +23,10 @@ cdef extern from "h/color.h":
         assign(Cprecision cr, Cprecision cg, Cprecision cb, Cprecision ca)
 
     cdef cppclass Crgb8(Crgb8T[byte]):
+        byte r
+        byte g
+        byte b
+        byte a
         toRGB(Crgb &rgb)
         setZero()
         dword getSummatory()
@@ -40,6 +44,9 @@ cdef extern from "h/color.h":
         setZero()
 
     cdef cppclass Crgb(Cvector3DT[float]):
+        float r
+        float g
+        float b
         dword get()
         gammaCorrectionRec709(real gamma)
         invGammaCorrectionRec709( real gamma )

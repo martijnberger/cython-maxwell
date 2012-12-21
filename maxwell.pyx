@@ -668,7 +668,6 @@ cdef class Material:
 
 cdef object _t_Material(Cmaxwell.Cmaterial* p):
     res = Material(__cleanup=False)
-    #print("_t_Material {}".format(<long> p))
     res.thisptr = deref(p)
     return res
 
@@ -686,10 +685,12 @@ cdef class MaterialLayer:
         res =  self.thisptr.getNumBSDFs( nBSDFs )
         if res == 0:
             raise Exception("Cmaxwell error")
-        return res
+        return nBSDFs
+
     def getBSDF(self,byte index):
         #Cmaxwell.Cbsdf   getBSDF( byte index )
-        return _t_BSDF(self.thisptr.getBSDF(index))
+        res = self.thisptr.getBSDF(index)
+        return _t_BSDF(res)
 
 cdef object _t_MaterialLayer(Cmaxwell.CmaterialLayer l):
     res = MaterialLayer()
@@ -704,15 +705,18 @@ cdef class BSDF:
         return res
 
 cdef object _t_BSDF(Cmaxwell.Cbsdf b):
-    res = BSDF()
-    res.thisptr = b
-    return res
+    if b.isNull() == 0:
+        res = BSDF()
+        res.thisptr = b
+        return res
 
 cdef class Reflectance:
     cdef Cmaxwell.Creflectance thisptr
 
-    def getColor(self, const_char* pID):
+    def getColor(self, channel):
+        a = bytes(channel, "UTF-8")
         cdef Cmaxwell.CmultiValue.Cmap* map = new Cmaxwell.CmultiValue.Cmap()
+        cdef const_char* pID = a
         res = self.thisptr.getColor(pID, deref(map))
         if res == 0:
             raise Exception("getColor failed")
@@ -727,12 +731,59 @@ cdef object _t_Reflectance(Cmaxwell.Creflectance r):
 cdef class MultiValueMap:
     cdef Cmaxwell.CmultiValue.Cmap thisprt
 
+    property rgb:
+        def __get__(self): return _t_rgb(&self.thisprt.rgb)
 
+    property pFileName:
+        def __get__(self):
+            if self.thisprt.pFileName != NULL:
+                return self.thisprt.pFileName
 
 cdef object _t_MultiValueMap(Cmaxwell.CmultiValue.Cmap* m):
    res = MultiValueMap()
    res.thisprt = deref(m)
    return res
+
+
+cdef class rgb:
+    cdef Crgb* thisptr
+
+    property r:
+        def __get__(self): return self.thisptr.r
+        def __set__(self, r): self.thisptr.r = r
+
+    property g:
+        def __get__(self): return self.thisptr.g
+        def __set__(self, g): self.thisptr.g = g
+
+    property b:
+        def __get__(self): return self.thisptr.b
+        def __set__(self, b): self.thisptr.b = b
+
+
+cdef object _t_rgb(Crgb* r):
+    res = rgb()
+    res.thisptr = r
+    return res
+
+'''    cdef cppclass Crgb(Cvector3DT[float]):
+        dword get()
+        gammaCorrectionRec709(real gamma)
+        invGammaCorrectionRec709( real gamma )
+        toRGB8( Crgb8 &rgb8 )
+        toRGB16( Crgb16 &rgb16 )
+        toXYZ( Cxyz &xyz )
+        toHSV( Chsv *pHSV ) # devuelve: h entre [0,360], s entre[0,1], v entre[0,1]
+        toHsv( float *h, float *s, float *v )
+        toYIQ( Cyiq &yiq )
+        toReflectanceSpectrum( CspectrumComplete *pSpectrum, real maxReflectance )
+        toReflectanceSpectrum( Cspectrum &s, real maxReflectance )
+        clip( )
+        bool constrain( )'''
+
+
+
+
 
 cdef class camera:
     cdef Cmaxwell.Ccamera thisptr
