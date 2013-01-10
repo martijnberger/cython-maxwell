@@ -19,6 +19,11 @@ else:
     extra_compile_args=['-D_LINUX']
     extra_link_args=['-Llib']
 
+if True:
+    extra_compile_args.append('-g')
+    extra_compile_args.append('-ggdb')
+    extra_link_args.append('-g')
+    extra_link_args.append('-ggdb')
 
 setup(
       name = "Maxwell",

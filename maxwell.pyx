@@ -11,7 +11,7 @@ from maxwell cimport Cmaxwell, byte, const_CoptionsReadMXS
 #from maxwell cimport *
 
 cdef byte mwcallback(byte isError, const_char *pMethod, const_char *pError, const_void *pValue):
-    raise Exception("{} {}".format(<char*>pMethod,<char*>pError))
+    raise Exception("{} {} {}".format(isError, <char*>pMethod,<char*>pError))
 
 cdef class maxwell:
     cdef Cmaxwell *thisptr
@@ -75,6 +75,39 @@ cdef class maxwell:
         self.thisptr.freeScene()
 
 
+    def setRenderParameter(self, const_char* pParameterName, ParameterValue ):
+        cdef dword size = getSizeFromRenderParameter(pParameterName)
+        cdef const_void* pParameterValue = <void*> 0 #&ParameterValue
+        res = self.thisptr.setRenderParameter(pParameterName,size,pParameterValue)
+        if res == 0:
+            raise Exception("setRenderParameter failed")
+
+    def getRenderParameter(self,  const_char* pParameterName ):
+        cdef dword size = getSizeFromRenderParameter(pParameterName)
+        cdef void* pParameterValue = malloc( size )
+        res = self.thisptr.getRenderParameter(pParameterName,size, pParameterValue)
+
+
+
+
+
+
+cdef getSizeFromRenderParameter(RenderParameter):
+    byte_vals = ["DO SHARPNESS","DO DEVIGNETTING","REMOVE FILES AFTER COPY","DO MOTION BLUR","DO DISPLACEMENT","DO DISPERSION","DO DIFFUSE LAYER","DO REFLECTION LAYER","DO DIRECT LAYER","DO INDIRECT LAYER","DO DIRECT REFLECTION CAUSTIC LAYER","DO INDIRECT REFLECTION CAUSTIC LAYER","DO DIRECT REFRACTION CAUSTIC LAYER","DO INDIRECT REFRACTION CAUSTIC LAYER","DO RENDER CHANNEL","DO ALPHA CHANNEL","OPAQUE ALPHA","EMBED CHANNELS","DO IDOBJECT CHANNEL","DO IDMATERIAL CHANNEL","DO SHADOW PASS CHANNEL","DO MOTION CHANNEL","DO ROUGHNESS CHANNEL","DO FRESNEL CHANNEL","DO NORMALS CHANNEL","NORMALS CHANNEL SPACE","POSITION CHANNEL SPACE","MOTION CHANNEL TYPE","DO POSITION CHANNEL","DO ZBUFFER CHANNEL","DO SCATTERING_LENS","DO NOT SAVE MXI FILE","DO NOT SAVE IMAGE FILE","RENAME AFTER SAVING","SAVE LIGHTS IN SEPARATE FILES","USE MULTILIGHT"]
+    if RenderParameter in byte_vals:
+        return sizeof(byte)
+    if RenderParameter in ["SAMPLING LEVEL"]:
+        return sizeof(float)
+    if RenderParameter in ["ENGINE"]:
+        return 3 * sizeof(char)
+    if RenderParameter in ["ZBUFFER RANGE","DEVIGNETTING","SCATTERING_LENS","SHARPNESS"]:
+        return sizeof( real )
+    if RenderParameter in ["NUM THREADS", "STOP TIME"]:
+        return sizeof( dword )
+    else: # is most likely a char *
+        return sizeof( char ) * 256
+
+
 cdef class point:
     cdef Cmaxwell.Cpoint *thisptr
     cdef bool cleanup
@@ -120,12 +153,14 @@ cdef class Vector:
     cdef Cvector *thisptr
     cdef bool cleanup
 
-    def __cinit__(self, bool cleanup=True):
-        self.thisptr = new Cvector()
+    def __cinit__(self, x=0, y=0, z=0, bool cleanup=True):
+        self.thisptr = new Cvector(x,y,z)
         self.cleanup = cleanup
 
-    def __init__(self, cleanup=True):
-        pass
+    def __init__(self, x = 0, y = 0, z = 0):
+        self.x = x
+        self.y = y
+        self.z = z
 
     def __dealloc__(self):
         if self.cleanup:
@@ -134,8 +169,10 @@ cdef class Vector:
     def __str__(self):
         return "vector: [{} {} {}]".format(self.x,self.y, self.z )
 
-    def __unicode__(self):
-        return __str__(self)
+    __unicode__ = __str__
+
+    __repr__ = __str__
+
 
     def set(self, double x, double y, double z):
         self.thisptr.x = x
@@ -144,15 +181,15 @@ cdef class Vector:
 
     property x:
         def __get__(self): return self.thisptr.x
-        def __set__(self, x): self.thisptr.x = x
+        def __set__(self, double x): self.thisptr.x = x
 
     property y:
         def __get__(self): return self.thisptr.y
-        def __set__(self, y): self.thisptr.y = y
+        def __set__(self, double y): self.thisptr.y = y
 
     property z:
         def __get__(self): return self.thisptr.z
-        def __set__(self, z): self.thisptr.z = z
+        def __set__(self, double z): self.thisptr.z = z
 
 
 cdef object _t_Vector(Cvector *p, cleanup=True):
@@ -247,7 +284,7 @@ cdef class Object:
     def getName(self):
         cdef char* name
         self.thisptr.getName(&name)
-        res = name.decode('UTF-8')
+        res = name.decode('UTF-8','replace')
         return res
 
     def isMesh(self):

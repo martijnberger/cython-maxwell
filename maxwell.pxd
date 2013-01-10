@@ -555,6 +555,9 @@ cdef extern from "h/maxwell.h":
         # Method:    getActiveCamera. Returns a pointer to the active camera of the scene^M
         Cmaxwell.Ccamera getActiveCamera()
 
+        byte setRenderParameter( const_char* pParameterName, dword size, const_void* pParameterValue )
+        byte getRenderParameter( const_char* pParameterName, dword size, void* pParameterValue )
+
 
 
 
