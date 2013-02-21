@@ -16,18 +16,10 @@ cdef extern from "h/flags.h":
 cdef extern from "h/maxwell.h":
     cdef cppclass MXparamList:
         pass
-    ctypedef real const_real "const real"
 
     ctypedef unsigned char byte "byte"
     ctypedef int bool "bool"
-    ctypedef void* const_CoptionsReadMXS "const Cmaxwell::CoptionsReadMXS"
-    ctypedef byte const_byte "const byte"
-    ctypedef dword const_dword "const dword"
-    ctypedef bool const_bool "const bool"
     ctypedef void* const_Cobject "const Cmaxwell::Cobject"
-    ctypedef void* const_Cpoint "const Cpoint"
-    ctypedef void* const_Cvector "const Cvector"
-    ctypedef void* const_Crgb "const Crgb"
     ctypedef void* const_CmultiValueCmap "const CmultiValue::Cmap"
 
     cdef cppclass Cmaxwell:
@@ -220,7 +212,7 @@ cdef extern from "h/maxwell.h":
             #              ratio: aspect ratio (default: 1)^M
             #              angle: angle in radians^M
             #              enabled: sets the custom bokeh on/off^M
-            byte    setCustomBokeh( const_real& ratio, const_real& angle, bool enabled )
+            byte    setCustomBokeh( const real& ratio, const real& angle, bool enabled )
             byte    getCustomBokeh( real& ratio, real& angle, bool& enabled )
 
             # Method:    set/getHide. sets/gets the hidden status of this camera (used only in Maxwell Studio)^M
@@ -260,7 +252,7 @@ cdef extern from "h/maxwell.h":
             byte getNumLayers( byte& nLayers )
             Cmaxwell.CmaterialLayer getLayer( byte index )
             
-            byte setReference( const_byte& enabled, const char* mxmPath )
+            byte setReference( const byte& enabled, const char* mxmPath )
             const char* getReference( byte& enabled )
             
             byte setDescription( const char* pDescription )
@@ -322,7 +314,7 @@ cdef extern from "h/maxwell.h":
             # Method: get/setReferencedOverrideFlags. Get the override policy for visibility flags
             # flags are described in OVERRIDE_REFERENCE_FLAGS in maxwellenums.h
             byte getReferencedOverrideFlags( byte& flags )
-            byte setReferencedOverrideFlags( const_byte& flags )
+            byte setReferencedOverrideFlags( const byte& flags )
 
             # Method:    mergeMeshes
             # Description: Merges an array of meshes into a single mesh.
@@ -347,7 +339,7 @@ cdef extern from "h/maxwell.h":
             byte    setProperties( byte doDirectCausticsReflection, byte doDirectCausticsRefraction,
                                    byte doIndirectCausticsReflection, byte doIndirectCausticsRefraction )
 
-            byte  getDependencies( dword& numDependencies, char** & paths, const_bool& searchInsideProxy )
+            byte  getDependencies( dword& numDependencies, char** & paths, const bool& searchInsideProxy )
 
             # Method:    getters/setters to set the mesh properties of the Cobject
             byte    getNumVertexes( dword& nVertexes )
@@ -367,10 +359,10 @@ cdef extern from "h/maxwell.h":
 
 
             byte    getVertex( dword iVertex, dword iPosition, Cpoint& point )
-            byte    setVertex( dword iVertex, dword iPosition, const_Cpoint& point )
+            byte    setVertex( dword iVertex, dword iPosition, const Cpoint& point )
 
             byte    getNormal( dword iNormal, dword iPosition, Cvector& normal )
-            byte    setNormal( dword iNormal, dword iPosition, const_Cvector& normal )
+            byte    setNormal( dword iNormal, dword iPosition, const Cvector& normal )
 
             byte    getTriangle( dword iTriangle, dword& iVertex1, dword& iVertex2, dword& iVertex3,
                                  dword& iNormal1, dword& iNormal2, dword& iNormal3 )
@@ -392,7 +384,7 @@ cdef extern from "h/maxwell.h":
             byte    setGroupMaterial( dword iGroup, Cmaxwell.Cmaterial material )
 
             byte    setBaseAndPivot( Cbase base, Cbase pivot, real substepTime)
-            byte    getBaseAndPivot( Cbase& base, Cbase& pivot, const_real substepTime)
+            byte    getBaseAndPivot( Cbase& base, Cbase& pivot, const real substepTime)
 
             # Method: getWorldTransform
             # Description: Returns the world transform of the object
@@ -405,7 +397,7 @@ cdef extern from "h/maxwell.h":
 
             # Method: getTransformSubstepsCount
             # Description: Return transform information( base, pivot and time) for the given index
-            byte    getTransformStepInfoByIndex( Cbase& base, Cbase& pivot, real& time, const_dword index )
+            byte    getTransformStepInfoByIndex( Cbase& base, Cbase& pivot, real& time, const dword index )
 
             #Global base, assumes global pivot is located at 0,0,0 and
             #with pivot axis 1,0,0  0,1,0   0,0,1
@@ -457,18 +449,18 @@ cdef extern from "h/maxwell.h":
             byte isExcludedOfCutPlanes( bool& excluded )
             byte excludeOfCutPlanes( bool exclude )
 
-            float* getReferenceProxyDisplayPoints( const_dword& percent, const_dword& maxPoints, dword& nPoints )
+            float* getReferenceProxyDisplayPoints( const dword& percent, const dword& maxPoints, dword& nPoints )
 
             # Method:    get/setColorID
             # Description: gets/sets the color used by this object in the Object ID render channel
             # rgb values must always be in the 0-1 range
-            byte setColorID( const_Crgb& color )
+            byte setColorID( const Crgb& color )
             byte getColorID( Crgb& color )
 
             # Method:    get/setSubdivisionLevel
             # Description: gets/sets the subdivision level of the mesh
             # 0 means no subdivision is applied
-            byte setSubdivisionLevel( const_dword& level )
+            byte setSubdivisionLevel( const dword& level )
             byte getSubdivisionLevel( dword& level )
 
 
@@ -520,7 +512,7 @@ cdef extern from "h/maxwell.h":
 
 
         Cmaxwell(byte(*callback)(byte isError, const char *pMethod, const char *pError, const void *pValue))
-        byte readMXS(const char* pPath, const_CoptionsReadMXS& mxsOptions)
+        byte readMXS(const char* pPath, const CoptionsReadMXS& mxsOptions)
         byte writeMXS(const char* pPath)
         byte getSceneInfo(Cmaxwell.CsceneInfo& info)
 

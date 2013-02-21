@@ -6,7 +6,7 @@ from libc.stdlib cimport malloc, free
 from vectors cimport *
 from base cimport *
 from color cimport *
-from maxwell cimport Cmaxwell, byte, const_CoptionsReadMXS
+from maxwell cimport Cmaxwell, byte
 #from maxwell cimport *
 
 cdef byte mwcallback(byte isError, const char *pMethod, const char *pError, const void *pValue):
@@ -24,7 +24,7 @@ cdef class maxwell:
     def readMXS(self, filename):
         a = bytes(filename, "UTF-8")
         cdef const char* f = a
-        res = self.thisptr.readMXS(f, <const_CoptionsReadMXS>Cmaxwell.CoptionsReadMXS())
+        res = self.thisptr.readMXS(f, Cmaxwell.CoptionsReadMXS())
         if res == 0:
             raise Exception("Could not open: {}".format(filename))
 
@@ -405,7 +405,7 @@ cdef class Object:
 
     #byte    setVertex( dword iVertex, dword iPosition, const_Cpoint& point )
     def setVertex(self, dword iVertex, dword iPosition, point p):
-        self.thisptr.setVertex(iVertex,iPosition,<const_Cpoint>deref(p.thisptr))
+        self.thisptr.setVertex(iVertex,iPosition,deref(p.thisptr))
         p.cleanup = False # make sure we dont free the Cpoint when we promised not to
 
     #byte    getNormal( dword iNormal, dword iPosition, Cvector& normal )
@@ -418,7 +418,7 @@ cdef class Object:
 
     #byte    setNormal( dword iNormal, dword iPosition, const_Cvector& normal )
     def setNormal(self, dword iNormal, dword iPosition, Vector v):
-        self.thisptr.setNormal(iNormal,iPosition, <const_Cvector> deref(v.thisptr))
+        self.thisptr.setNormal(iNormal,iPosition, deref(v.thisptr))
         v.cleanup = False
 
     #byte    getTriangle( dword iTriangle, dword& iVertex1, dword& iVertex2, dword& iVertex3,\
