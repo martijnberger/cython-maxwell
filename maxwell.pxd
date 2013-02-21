@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from libc.string cimport const_char, const_void
-
 ctypedef unsigned int dword
 ctypedef unsigned short word
 ctypedef double real
@@ -39,10 +37,10 @@ cdef extern from "h/maxwell.h":
             void* getPointer()
 
         cppclass CmultiValue:
-            #const_char* pID
-            #const_char* pType
+            #const char* pID
+            #const char* pType
             #void* pParameter
-            CmultiValue(const_char* _pID, const_char* _pType, void* _pParameter)
+            CmultiValue(const char* _pID, const char* _pType, void* _pParameter)
 
             cppclass Cmap:
                 byte        type
@@ -81,13 +79,13 @@ cdef extern from "h/maxwell.h":
             byte setActiveIorMode( byte complex )
             byte getActiveIorMode( byte& complex )
 
-            byte setComplexIor( const_char* pFileName )
-            const_char* getComplexIor( )
+            byte setComplexIor( const char* pFileName )
+            const char* getComplexIor( )
 
-            byte getColor( const_char* pID, Cmaxwell.CmultiValue.Cmap& map )
+            byte getColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
         cppclass Cbsdf(CmaterialPointer):
             Cbsdf()
-            byte    setName( const_char* pName )
+            byte    setName( const char* pName )
             char*   getName( )
 
             byte    setState( bool enabled )
@@ -115,7 +113,7 @@ cdef extern from "h/maxwell.h":
             byte    setEnabled( bool enable )
             byte    getEnabled( bool& enabled )
 
-            byte    setName( const_char* pName )
+            byte    setName( const char* pName )
             byte    getName( char** pName )
 
             byte    setStackedBlendingMode( byte mode )
@@ -150,21 +148,21 @@ cdef extern from "h/maxwell.h":
             byte    getNumBSDFs( byte& nBSDFs )
             Cmaxwell.Cbsdf   getBSDF( byte index )
 
-            void setAttribute( const_char* name, const_CmultiValueCmap& map )
-            void setActiveAttribute( const_char* name, const_CmultiValueCmap& map )
+            void setAttribute( const char* name, const_CmultiValueCmap& map )
+            void setActiveAttribute( const char* name, const_CmultiValueCmap& map )
 
-            byte getAttribute( const_char* name, Cmaxwell.CmultiValue.Cmap& map )
-            byte getActiveAttribute( const_char* name, Cmaxwell.CmultiValue.Cmap& map )
+            byte getAttribute( const char* name, Cmaxwell.CmultiValue.Cmap& map )
+            byte getActiveAttribute( const char* name, Cmaxwell.CmultiValue.Cmap& map )
 
 
 
 
 
         cppclass CmultiValue:
-            const_char* pID
-            const_char* pType
+            const char* pID
+            const char* pType
             void* pParameter
-            CmultiValue(const_char* _pID, const_char* _pType, void* _pParameter)
+            CmultiValue(const char* _pID, const char* _pType, void* _pParameter)
             cppclass Cmap:
                 byte type
                 real value
@@ -181,12 +179,12 @@ cdef extern from "h/maxwell.h":
             byte getStep( dword iStep, Cpoint& origin, Cpoint& focalPoint, Cvector& up, real& focalLength, real& fStop, real& stepTime )
             byte setOrthoValues( dword iStep, real orthoX, real orthoY, real orthoZoom, real focalLength, real fStop )
             byte getOrthoValues( dword iStep, real& orthoX, real& orthoY, real& orthoZoom, real& focalLength, real& fStop )
-            const_char* getValues( dword& nSteps, real& shutter, real& filmWidth, real& filmHeight, real& iso,
-                                   const_char** pDiaphragmType, real& angle, dword& nBlades,
+            const char* getValues( dword& nSteps, real& shutter, real& filmWidth, real& filmHeight, real& iso,
+                                   const char** pDiaphragmType, real& angle, dword& nBlades,
                                    dword& fps, dword& xRes, dword& yRes, real& pixelAspect,
                                    byte& projectionType )
-            byte setName( const_char* pName )
-            const_char* getName()
+            byte setName( const char* pName )
+            const char* getName()
             byte setResolution( dword xRes, dword yRes )
             byte getResolution( dword& xRes, dword& yRes )
             byte setPixelAspect( real pixelAspect )
@@ -201,13 +199,13 @@ cdef extern from "h/maxwell.h":
             byte setFilmSize( real filmWidth, real filmHeight )
             byte getFilmSize( real& filmWidth, real& filmHeight )
 
-            byte setDiaphragm( const_char* pDiaphragmType, real angle, dword nBlades )
-            byte getDiaphragm( const_char** pDiaphragmType, real& angle, dword& nBlades )
+            byte setDiaphragm( const char* pDiaphragmType, real angle, dword nBlades )
+            byte getDiaphragm( const char** pDiaphragmType, real& angle, dword& nBlades )
 
             byte setFPS( real fps )
             byte getFPS( real& fps )
 
-            byte setScreenRegion( dword x1, dword y1, dword x2, dword y2, const_char* pRegionType )
+            byte setScreenRegion( dword x1, dword y1, dword x2, dword y2, const char* pRegionType )
             byte getScreenRegion( dword& x1, dword& y1, dword& x2, dword& y2, char* pType )
 
             byte setCutPlanes( real zNear, real zFar, bool enabled )
@@ -230,8 +228,8 @@ cdef extern from "h/maxwell.h":
             byte    isHide( bool& hide )
 
             # Method:    get/setUuid. Uuid that can be used for custom purposes^M
-            byte    setUuid( const_char* pUuid )
-            const_char* getUuid( )
+            byte    setUuid( const char* pUuid )
+            const char* getUuid( )
 
             # Method:    get/setUserData  (Not used in plugins)^M
             byte    setUserData( void* pData )
@@ -257,25 +255,25 @@ cdef extern from "h/maxwell.h":
             Cmaxwell.Cmaterial createCopy()
             byte free()
             byte extract()
-            byte getVersion(const_char* pFileName, float& version)
+            byte getVersion(const char* pFileName, float& version)
             
             byte getNumLayers( byte& nLayers )
             Cmaxwell.CmaterialLayer getLayer( byte index )
             
-            byte setReference( const_byte& enabled, const_char* mxmPath )
-            const_char* getReference( byte& enabled )
+            byte setReference( const_byte& enabled, const char* mxmPath )
+            const char* getReference( byte& enabled )
             
-            byte setDescription( const_char* pDescription )
-            const_char* getDescription( )
+            byte setDescription( const char* pDescription )
+            const char* getDescription( )
             
-            byte setUuid( const_char* pUuid )
-            const_char* getUuid( )
+            byte setUuid( const char* pUuid )
+            const char* getUuid( )
             
-            byte setName(const_char* pFileName)
-            const_char* getName()
+            byte setName(const char* pFileName)
+            const char* getName()
             
-            byte read( const_char* pFileName )
-            byte write( const_char* pFileName )
+            byte read( const char* pFileName )
+            byte write( const char* pFileName )
 
         cppclass Cobject(Cpointer):
             cppclass Citerator:
@@ -287,7 +285,7 @@ cdef extern from "h/maxwell.h":
             byte setPointer( Cmaxwell* pMaxwell, void* pObject )
             byte free()
             byte getName(char** pName)
-            byte setName(const_char* pName)
+            byte setName(const char* pName)
 
             # Method:    isMesh. Returns isMesh = 1 if this Cobject is a real mesh (not an instance or any other thing)
             byte isMesh( byte& isMesh )
@@ -308,18 +306,18 @@ cdef extern from "h/maxwell.h":
                             int& rwTesselation, bool& mb, real& mbCoef )
 
 
-            byte setRFRKParameters( const_char* binSeqNames, const_char* rwName, char* substractiveField,
+            byte setRFRKParameters( const char* binSeqNames, const char* rwName, char* substractiveField,
                                 real scale, real resolution, real polySize, real radius, real smooth, real core,
                                 real splash, real maxVelocity, int axis, real fps, int frame, int offset, bool flipNorm,
                                 int rwTesselation, bool mb, real mbCoef )
 
             # Method:    get/setProxyPath. Get/sets the scene file referenced by this object
-            const_char* getReferencedScenePath()
-            byte setReferencedScenePath( const_char* proxyPath )
+            const char* getReferencedScenePath()
+            byte setReferencedScenePath( const char* proxyPath )
 
             # Method:    get/setReferenceMaterial. Get/sets the material of an specific object inside the referenced scene
-            byte getReferencedSceneMaterial( const_char* objectName, Cmaxwell.Cmaterial& material )
-            byte setReferencedSceneMaterial( const_char* objectName, Cmaxwell.Cmaterial material )
+            byte getReferencedSceneMaterial( const char* objectName, Cmaxwell.Cmaterial& material )
+            byte setReferencedSceneMaterial( const char* objectName, Cmaxwell.Cmaterial material )
 
             # Method: get/setReferencedOverrideFlags. Get the override policy for visibility flags
             # flags are described in OVERRIDE_REFERENCE_FLAGS in maxwellenums.h
@@ -336,8 +334,8 @@ cdef extern from "h/maxwell.h":
             byte    setParent( Cobject parent )
 
             # Method:    get/setUuid. Uuid that can be used for custom purposes
-            const_char* getUuid( )
-            byte    setUuid( const_char* pUuid )
+            const char* getUuid( )
+            byte    setUuid( const char* pUuid )
 
             # Method:    get/setMaterial. Material applied to the object
             byte    getMaterial( Cmaxwell.Cmaterial& material )
@@ -521,9 +519,9 @@ cdef extern from "h/maxwell.h":
             byte getGeometryModifierExtensionParamsAtIndex( MXparamList*& extensionParams, dword modifierExtensionsIndex )
 
 
-        Cmaxwell(byte(*callback)(byte isError, const_char *pMethod, const_char *pError, const_void *pValue))
-        byte readMXS(const_char* pPath, const_CoptionsReadMXS& mxsOptions)
-        byte writeMXS(const_char* pPath)
+        Cmaxwell(byte(*callback)(byte isError, const char *pMethod, const char *pError, const void *pValue))
+        byte readMXS(const char* pPath, const_CoptionsReadMXS& mxsOptions)
+        byte writeMXS(const char* pPath)
         byte getSceneInfo(Cmaxwell.CsceneInfo& info)
 
         # Method: getEngineVersion. Returns the current version of Maxwell
@@ -537,26 +535,26 @@ cdef extern from "h/maxwell.h":
         # Method: get/setScenePreview
         Crgb8* getSCenePreview( dword& xRes, dword& yRes)
         byte   setScebePreview( dword xRes, dword yRes, Crgb* pRGB)
-        Crgb8* readPreview(const_char* pPath, dword& xResPreview, dword& yResPreview)
+        Crgb8* readPreview(const char* pPath, dword& xResPreview, dword& yResPreview)
 
 
 
 
         # Method:    addCamera. Adds a new camera to the scene with the given parameters^M
         # projectionType:TYPE_PERSPECTIVE, TYPE_FRONT, TYPE_TOP, TYPE_LEFT, TYPE_BACK, TYPE_BOTTOM, TYPE_RIGHT^M 
-        Cmaxwell.Ccamera addCamera( const_char* pName, dword nSteps, real shutter, real filmWidth,
-                           real filmHeight, real iso, const_char* pDiaphragmType, real angle,
+        Cmaxwell.Ccamera addCamera( const char* pName, dword nSteps, real shutter, real filmWidth,
+                           real filmHeight, real iso, const char* pDiaphragmType, real angle,
                            dword nBlades, dword fps, dword xRes, dword yRes, real pixelAspect,
                            byte projectionType = 0)
 
         # Method:    getCamera. Given the name of a camera this function returns its Ccamera pointer.^M
-        Cmaxwell.Ccamera getCamera( const_char* pCameraName )
+        Cmaxwell.Ccamera getCamera( const char* pCameraName )
 
         # Method:    getActiveCamera. Returns a pointer to the active camera of the scene^M
         Cmaxwell.Ccamera getActiveCamera()
 
-        byte setRenderParameter( const_char* pParameterName, dword size, const_void* pParameterValue )
-        byte getRenderParameter( const_char* pParameterName, dword size, void* pParameterValue )
+        byte setRenderParameter( const char* pParameterName, dword size, const void* pParameterValue )
+        byte getRenderParameter( const char* pParameterName, dword size, void* pParameterValue )
 
 
 

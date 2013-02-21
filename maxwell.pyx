@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from cython.operator cimport dereference as deref, preincrement as inc
-from libc.string cimport const_char, const_void
 from libc.stdlib cimport malloc, free
 
 from vectors cimport *
@@ -10,7 +9,7 @@ from color cimport *
 from maxwell cimport Cmaxwell, byte, const_CoptionsReadMXS
 #from maxwell cimport *
 
-cdef byte mwcallback(byte isError, const_char *pMethod, const_char *pError, const_void *pValue):
+cdef byte mwcallback(byte isError, const char *pMethod, const char *pError, const void *pValue):
     raise Exception("{} {} {}".format(isError, <char*>pMethod,<char*>pError))
 
 cdef class maxwell:
@@ -24,13 +23,13 @@ cdef class maxwell:
 
     def readMXS(self, filename):
         a = bytes(filename, "UTF-8")
-        cdef const_char* f = a
+        cdef const char* f = a
         res = self.thisptr.readMXS(f, <const_CoptionsReadMXS>Cmaxwell.CoptionsReadMXS())
         if res == 0:
             raise Exception("Could not open: {}".format(filename))
 
     def writeMXS(self, filename):
-        cdef const_char* f = filename
+        cdef const char* f = filename
         self.thisptr.writeMXS(f)
 
     def getSceneInfo(self):
@@ -74,15 +73,29 @@ cdef class maxwell:
     def freeScene(self):
         self.thisptr.freeScene()
 
-
-    def setRenderParameter(self, const_char* pParameterName, ParameterValue ):
+'''
+    def setRenderParameter(self, const char* pParameterName, ParameterValue ):
         cdef dword size = getSizeFromRenderParameter(pParameterName)
-        cdef const_void* pParameterValue = <void*> 0 #&ParameterValue
+        byte_vals = ["DO SHARPNESS","DO DEVIGNETTING","REMOVE FILES AFTER COPY","DO MOTION BLUR","DO DISPLACEMENT","DO DISPERSION","DO DIFFUSE LAYER","DO REFLECTION LAYER","DO DIRECT LAYER","DO INDIRECT LAYER","DO DIRECT REFLECTION CAUSTIC LAYER","DO INDIRECT REFLECTION CAUSTIC LAYER","DO DIRECT REFRACTION CAUSTIC LAYER","DO INDIRECT REFRACTION CAUSTIC LAYER","DO RENDER CHANNEL","DO ALPHA CHANNEL","OPAQUE ALPHA","EMBED CHANNELS","DO IDOBJECT CHANNEL","DO IDMATERIAL CHANNEL","DO SHADOW PASS CHANNEL","DO MOTION CHANNEL","DO ROUGHNESS CHANNEL","DO FRESNEL CHANNEL","DO NORMALS CHANNEL","NORMALS CHANNEL SPACE","POSITION CHANNEL SPACE","MOTION CHANNEL TYPE","DO POSITION CHANNEL","DO ZBUFFER CHANNEL","DO SCATTERING_LENS","DO NOT SAVE MXI FILE","DO NOT SAVE IMAGE FILE","RENAME AFTER SAVING","SAVE LIGHTS IN SEPARATE FILES","USE MULTILIGHT"]
+        if pParameterName in byte_vals:
+            size = sizeof(byte)
+            pParameterValue =
+        if pParameterName in ["SAMPLING LEVEL"]:
+            size = sizeof(float)
+        if pParameterName in ["ENGINE"]:
+            size = 3 * sizeof(char)
+        if pParameterName in ["ZBUFFER RANGE","DEVIGNETTING","SCATTERING_LENS","SHARPNESS"]:
+            size =  sizeof( real )
+        if pParameterName in ["NUM THREADS", "STOP TIME"]:
+            size =  sizeof( dword )
+        else: # is most likely a char *
+            size =  sizeof( char ) * 256
+        cdef const void* pParameterValue = <void*> 0 #&ParameterValue
         res = self.thisptr.setRenderParameter(pParameterName,size,pParameterValue)
         if res == 0:
             raise Exception("setRenderParameter failed")
 
-    def getRenderParameter(self,  const_char* pParameterName ):
+    def getRenderParameter(self,  const char* pParameterName ):
         cdef dword size = getSizeFromRenderParameter(pParameterName)
         cdef void* pParameterValue = malloc( size )
         res = self.thisptr.getRenderParameter(pParameterName,size, pParameterValue)
@@ -106,7 +119,7 @@ cdef getSizeFromRenderParameter(RenderParameter):
         return sizeof( dword )
     else: # is most likely a char *
         return sizeof( char ) * 256
-
+'''
 
 cdef class point:
     cdef Cmaxwell.Cpoint *thisptr
@@ -157,7 +170,7 @@ cdef class Vector:
         self.thisptr = new Cvector(x,y,z)
         self.cleanup = cleanup
 
-    def __init__(self, x = 0, y = 0, z = 0):
+    def __init__(self, x = 0, y = 0, z = 0, cleanup=True):
         self.x = x
         self.y = y
         self.z = z
@@ -278,7 +291,7 @@ cdef class Object:
     #    self.thisptr.free()
 
     def setName(self, name):
-        cdef const_char *c_string = name
+        cdef const char *c_string = name
         self.thisptr.setName(c_string)
 
     def getName(self):
@@ -314,7 +327,7 @@ cdef class Object:
     def getReferencedScenePath(self):
         return self.thisptr.getReferencedScenePath().decode('UTF-8')
 
-    def setReferencedScenePath(self, const_char* proxyPath):
+    def setReferencedScenePath(self, const char* proxyPath):
         res = self.thisptr.setReferencedScenePath(proxyPath)
 
     def getParent(self):
@@ -473,15 +486,15 @@ byte getRFRKParameters( char*& binSeqNames, char*& rwName, char*& substractiveFi
     int& rwTesselation, bool& mb, real& mbCoef )
 
 
-byte setRFRKParameters( const_char* binSeqNames, const_char* rwName, char* substractiveField,\
+byte setRFRKParameters( const char* binSeqNames, const char* rwName, char* substractiveField,\
     real scale, real resolution, real polySize, real radius, real smooth, real core,\
                                                                                real splash, real maxVelocity, int axis, real fps, int frame, int offset, bool flipNorm,\
                                                                                                                                                               int rwTesselation, bool mb, real mbCoef )
 
 
 # Method:    get/setReferenceMaterial. Get/sets the material of an specific object inside the referenced scene
-byte getReferencedSceneMaterial( const_char* objectName, Cmaterial& material )
-byte setReferencedSceneMaterial( const_char* objectName, Cmaterial material )
+byte getReferencedSceneMaterial( const char* objectName, Cmaterial& material )
+byte setReferencedSceneMaterial( const char* objectName, Cmaterial material )
 
 # Method: get/setReferencedOverrideFlags. Get the override policy for visibility flags
 # flags are described in OVERRIDE_REFERENCE_FLAGS in maxwellenums.h
@@ -498,8 +511,8 @@ byte    getParent( Cobject& parent )
 byte    setParent( Cobject parent )
 
 # Method:    get/setUuid. Uuid that can be used for custom purposes
-const_char* getUuid( )
-byte    setUuid( const_char* pUuid )
+const char* getUuid( )
+byte    setUuid( const char* pUuid )
 
 
 
@@ -682,7 +695,7 @@ cdef class Material:
         pass
 
     def setName(self, name):
-        cdef const_char *c_string = name
+        cdef const char *c_string = name
         self.thisptr.setName(c_string)
 
     def getName(self):
@@ -753,7 +766,7 @@ cdef class Reflectance:
     def getColor(self, channel):
         a = bytes(channel, "UTF-8")
         cdef Cmaxwell.CmultiValue.Cmap* map = new Cmaxwell.CmultiValue.Cmap()
-        cdef const_char* pID = a
+        cdef const char* pID = a
         res = self.thisptr.getColor(pID, deref(map))
         if res == 0:
             raise Exception("getColor failed")
@@ -832,7 +845,7 @@ cdef class camera:
         pass
 
     def setName(self, name):
-        cdef const_char *c_string = name
+        cdef const char *c_string = name
         self.thisptr.setName(c_string)
 
     def getName(self):
@@ -891,7 +904,7 @@ cdef class camera:
         cdef real orthoZoom = 0
         cdef real focalLenght = 0
         cdef real fStop = 0
-        cdef const_char * pDiaphragmType
+        cdef const char * pDiaphragmType
         cdef real angle = 0
         cdef dword nBlades = 0
         cdef real filmWidth = 0
@@ -974,13 +987,13 @@ cdef class camera:
         self.thisptr.getFilmSize(filmWidth,filmHeight)
         return filmWidth, filmHeight
 
-    #byte setDiaphragm( const_char* pDiaphragmType, real angle, dword nBlades )
-    def setDiaphragm(self, const_char* pDiaphragmType, real angle, dword nBlades):
+    #byte setDiaphragm( const char* pDiaphragmType, real angle, dword nBlades )
+    def setDiaphragm(self, const char* pDiaphragmType, real angle, dword nBlades):
         self.thisptr.setDiaphragm(pDiaphragmType,angle, nBlades)
 
-    #byte getDiaphragm( const_char** pDiaphragmType, real& angle, dword& nBlades )
+    #byte getDiaphragm( const char** pDiaphragmType, real& angle, dword& nBlades )
     def getDiaphragm(self):
-        cdef const_char* pDiaphragmType
+        cdef const char* pDiaphragmType
         cdef real angle = 0
         cdef dword nBlades = 0
         self.thisptr.getDiaphragm(&pDiaphragmType,angle,nBlades)
@@ -996,8 +1009,8 @@ cdef class camera:
         self.thisptr.getFPS(fps)
         return fps
 
-    #byte setScreenRegion( dword x1, dword y1, dword x2, dword y2, const_char* pRegionType )
-    def setScreenRegion(self, dword x1, dword y1, dword x2, dword y2, const_char * pRegionType):
+    #byte setScreenRegion( dword x1, dword y1, dword x2, dword y2, const char* pRegionType )
+    def setScreenRegion(self, dword x1, dword y1, dword x2, dword y2, const char * pRegionType):
         self.thisptr.setScreenRegion(x1,y1,x2,y2,pRegionType)
 
     #byte getScreenRegion( dword& x1, dword& y1, dword& x2, dword& y2, char* pType )
@@ -1052,8 +1065,8 @@ cdef class camera:
         #byte    isHide( bool& hide )
 
         # Method:    get/setUuid. Uuid that can be used for custom purposes^M
-        #byte    setUuid( const_char* pUuid )
-        #const_char* getUuid( )
+        #byte    setUuid( const char* pUuid )
+        #const char* getUuid( )
 
         # Method:    get/setUserData  (Not used in plugins)^M
         #byte    setUserData( void* pData )
