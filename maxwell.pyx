@@ -104,7 +104,6 @@ cdef class maxwell:
         else: # is most likely a char * # pParameterName in [b"ENGINE"]:
             py_byte_string = ParameterValue.encode('UTF-8')
             char_res = py_byte_string
-            print(char_res)
             f_res = pParameterValue = self.thisptr.setRenderParameter(pParameterName, size, char_res )
         if f_res == 0:
             raise Exception("setRenderParameter failed")
@@ -116,7 +115,6 @@ cdef class maxwell:
         cdef dword size = s
         cdef void* pParameterValue
         pParameterValue = malloc(s)
-        #print("calling getRenderParameter {} {}".format(size, pParameterName))
         f_res = self.thisptr.getRenderParameter(pParameterName, size, pParameterValue)
         res = None
         if f_res != 1:
@@ -470,14 +468,32 @@ cdef class Object:
         return (v1,v2,v3,n1,n2,n3)
 
 
-#byte    setTriangle( dword iTriangle, dword iVertex1, dword iVertex2, dword iVertex3,\
-#                                                                            dword iNormal1, dword iNormal2, dword iNormal3 )
+    #byte    setTriangle( dword iTriangle, dword iVertex1, dword iVertex2, dword iVertex3,\
+    #                                      dword iNormal1, dword iNormal2, dword iNormal3 )
+    def setTriangle(self,dword iTriangle, \
+                         dword iVertex1, dword iVertex2, dword iVertex3, \
+                         dword iNormal1,  dword iNormal2, dword iNormal3 ):
+        cdef byte res = self.thisptr.setTriangle( iTriangle,  iVertex1,  iVertex2,  iVertex3,  iNormal1,  iNormal2,  iNormal3 )
+        if res == 0:
+            raise IndexError('Triangle out of range')
 
-#byte    getTriangleGroup( dword iTriangle, dword& idGroup )
-#byte    setTriangleGroup( dword iTriangle, dword idGroup )
+    #byte    getTriangleGroup( dword iTriangle )
+    def getTriangleGroup(self, dword iTriangle):
+        cdef dword idGroup = 0
+        cdef byte res = self.thisptr.getTriangleGroup( iTriangle, idGroup )
+        if res == 0:
+            raise IndexError('Triangle out of range')
+        return idGroup
 
-#byte    getTriangleUVW( dword iTriangle, dword iChannelID, float& u1, float& v1, float& w1,\
-#                                               float& u2, float& v2, float& w2, float& u3, float& v3, float& w3 )
+    #byte    setTriangleGroup( dword iTriangle, dword idGroup )
+    def setTriangleGroup(self, dword iTriangle, dword idGroup ):
+        cdef byte res = self.thisptr.setTriangleGroup(iTriangle, idGroup)
+        if res == 0:
+            raise IndexError('Triangle out of range')
+
+
+    #byte    getTriangleUVW( dword iTriangle, dword iChannelID, float& u1, float& v1, float& w1,\
+    #                        float& u2, float& v2, float& w2, float& u3, float& v3, float& w3 )
     def getTriangleUVW(self,dword iTriangle, dword iChannelID):
         cdef float u1 = 0
         cdef float v1 = 0
@@ -488,12 +504,19 @@ cdef class Object:
         cdef float u3 = 0
         cdef float v3 = 0
         cdef float w3 = 0
-        res = self.thisptr.getTriangleUVW(iTriangle,iChannelID,u1, v1, w1, u2, v2, w2, u3, v3, w3)
+        cdef byte res = self.thisptr.getTriangleUVW(iTriangle,iChannelID,u1, v1, w1, u2, v2, w2, u3, v3, w3)
         if res == 0:
             raise IndexError('Triangle out of range')
         return (u1, v1, w1, u2, v2, w2, u3, v3, w3)
-#byte    setTriangleUVW( dword iTriangle, dword iChannelID, float u1, float v1, float w1,\
-#                                                                                     float u2, float v2, float w2, float u3, float v3, float w3 )
+
+
+    #byte    setTriangleUVW( dword iTriangle, dword iChannelID, float u1, float v1, float w1,\
+    #                        float u2, float v2, float w2, float u3, float v3, float w3 )
+    def setTriangleUVW(self, dword iTriangle, dword iChannelID, float u1, float v1, float w1, \
+                             float u2, float v2, float w2, float u3, float v3, float w3 ):
+        cdef byte res = self.thisptr.setTriangleUVW( iTriangle, iChannelID, u1, v1, w1,u2, v2, w2, u3, v3, w3 )
+        if res == 0:
+            raise IndexError('Triangle out of range')
 
     #byte    getTriangleMaterial( dword iTriangle, Cmaterial& material )\
     def getTriangleMaterial(self,dword iTriangle):
@@ -504,10 +527,17 @@ cdef class Object:
         return _t_Material(mat)
 
 
-#byte    setTriangleMaterial( dword iTriangle, Cmaterial material )
+    #byte    setTriangleMaterial( dword iTriangle, Cmaterial material )
+    def setTriangleMaterial(self, dword iTriangle, Material material ):
+        if type(material) != Material:
+            raise TypeError("set Material requires actual material")
+        cdef byte res = self.thisptr.setTriangleMaterial(iTriangle, material.thisptr)
+        if res == 0:
+            raise IndexError('setTriangleMaterial failed')
 
-#byte    getGroupMaterial( dword iGroup, Cmaterial& material )
-#byte    setGroupMaterial( dword iGroup, Cmaterial material )
+
+    #byte    getGroupMaterial( dword iGroup, Cmaterial& material )
+    #byte    setGroupMaterial( dword iGroup, Cmaterial material )
 
 '''
 # Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
@@ -727,6 +757,9 @@ cdef class Material:
         #    print("Cleanup Material: {}".format(<long> self.thisptr))
         #    del &self.thisptr
         pass
+
+    cdef Cmaxwell.Cmaterial* getThisptr(self):
+        return &self.thisptr
 
     def setName(self, name):
         cdef const char *c_string = name
