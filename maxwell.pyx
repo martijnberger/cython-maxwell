@@ -10,7 +10,9 @@ from maxwell cimport Cmaxwell, byte
 #from maxwell cimport *
 
 cdef byte mwcallback(byte isError, const char *pMethod, const char *pError, const void *pValue):
-    raise Exception("{} {} {}".format(isError, <char*>pMethod,<char*>pError))
+    if isError != 3: # 3 == INFO ???
+        raise Exception("{} {} {}".format(isError, <char*>pMethod,<char*>pError))
+    #print("{} {} {}".format(isError, str(pMethod), str(pError), deref(err_val)))
 
 cdef class maxwell:
     cdef Cmaxwell *thisptr
@@ -73,53 +75,85 @@ cdef class maxwell:
     def freeScene(self):
         self.thisptr.freeScene()
 
-'''
-    def setRenderParameter(self, const char* pParameterName, ParameterValue ):
-        cdef dword size = getSizeFromRenderParameter(pParameterName)
-        byte_vals = ["DO SHARPNESS","DO DEVIGNETTING","REMOVE FILES AFTER COPY","DO MOTION BLUR","DO DISPLACEMENT","DO DISPERSION","DO DIFFUSE LAYER","DO REFLECTION LAYER","DO DIRECT LAYER","DO INDIRECT LAYER","DO DIRECT REFLECTION CAUSTIC LAYER","DO INDIRECT REFLECTION CAUSTIC LAYER","DO DIRECT REFRACTION CAUSTIC LAYER","DO INDIRECT REFRACTION CAUSTIC LAYER","DO RENDER CHANNEL","DO ALPHA CHANNEL","OPAQUE ALPHA","EMBED CHANNELS","DO IDOBJECT CHANNEL","DO IDMATERIAL CHANNEL","DO SHADOW PASS CHANNEL","DO MOTION CHANNEL","DO ROUGHNESS CHANNEL","DO FRESNEL CHANNEL","DO NORMALS CHANNEL","NORMALS CHANNEL SPACE","POSITION CHANNEL SPACE","MOTION CHANNEL TYPE","DO POSITION CHANNEL","DO ZBUFFER CHANNEL","DO SCATTERING_LENS","DO NOT SAVE MXI FILE","DO NOT SAVE IMAGE FILE","RENAME AFTER SAVING","SAVE LIGHTS IN SEPARATE FILES","USE MULTILIGHT"]
-        if pParameterName in byte_vals:
-            size = sizeof(byte)
-            pParameterValue =
-        if pParameterName in ["SAMPLING LEVEL"]:
-            size = sizeof(float)
-        if pParameterName in ["ENGINE"]:
-            size = 3 * sizeof(char)
-        if pParameterName in ["ZBUFFER RANGE","DEVIGNETTING","SCATTERING_LENS","SHARPNESS"]:
-            size =  sizeof( real )
-        if pParameterName in ["NUM THREADS", "STOP TIME"]:
-            size =  sizeof( dword )
-        else: # is most likely a char *
-            size =  sizeof( char ) * 256
-        cdef const void* pParameterValue = <void*> 0 #&ParameterValue
-        res = self.thisptr.setRenderParameter(pParameterName,size,pParameterValue)
-        if res == 0:
+
+
+
+    def setRenderParameter(self, ParameterName, ParameterValue ):
+        py_byte_string = ParameterName.encode('UTF-8')
+        cdef char* pParameterName = py_byte_string
+        s, t = getSizeFromRenderParameter(pParameterName)
+        cdef dword size = s
+        cdef byte f_res = 0
+        cdef byte byte_res
+        cdef float float_res
+        cdef real real_res
+        cdef char* char_res
+        cdef dword dword_res
+        if t is 'BYTE':
+            byte_res = ParameterValue
+            f_res = pParameterValue = self.thisptr.setRenderParameter(pParameterName, size, &byte_res )
+        elif t is 'FLOAT':
+            float_res = ParameterValue
+            f_res = pParameterValue = self.thisptr.setRenderParameter(pParameterName, size, &float_res )
+        elif t is 'REAL':
+            real_res = ParameterValue
+            f_res = pParameterValue = self.thisptr.setRenderParameter(pParameterName, size, &real_res )
+        elif t is 'DWORD':
+            dword_res = ParameterValue
+            f_res = pParameterValue = self.thisptr.setRenderParameter(pParameterName, size, &dword_res )
+        else: # is most likely a char * # pParameterName in [b"ENGINE"]:
+            py_byte_string = ParameterValue.encode('UTF-8')
+            char_res = py_byte_string
+            print(char_res)
+            f_res = pParameterValue = self.thisptr.setRenderParameter(pParameterName, size, char_res )
+        if f_res == 0:
             raise Exception("setRenderParameter failed")
 
-    def getRenderParameter(self,  const char* pParameterName ):
-        cdef dword size = getSizeFromRenderParameter(pParameterName)
-        cdef void* pParameterValue = malloc( size )
-        res = self.thisptr.getRenderParameter(pParameterName,size, pParameterValue)
+    def getRenderParameter(self,  ParameterName ):
+        py_byte_string = ParameterName.encode('UTF-8')
+        cdef char* pParameterName = py_byte_string
+        s, t = getSizeFromRenderParameter(pParameterName)
+        cdef dword size = s
+        cdef void* pParameterValue
+        pParameterValue = malloc(s)
+        #print("calling getRenderParameter {} {}".format(size, pParameterName))
+        f_res = self.thisptr.getRenderParameter(pParameterName, size, pParameterValue)
+        res = None
+        if f_res != 1:
+            raise Exception("getRenderParameter failed")
+        elif t is 'BYTE':
+            res = deref(<byte*>pParameterValue)
+        elif t is 'FLOAT':
+            res =  deref(<float*>pParameterValue)
+        elif t is 'REAL':
+            res = deref(<real*>pParameterValue)
+        elif t is 'DWORD':
+            res = deref(<dword*>pParameterValue)
+        else:
+            res =  <char*>pParameterValue
+        free(pParameterValue)
+        return  res
 
-
-
-
-
-
-cdef getSizeFromRenderParameter(RenderParameter):
-    byte_vals = ["DO SHARPNESS","DO DEVIGNETTING","REMOVE FILES AFTER COPY","DO MOTION BLUR","DO DISPLACEMENT","DO DISPERSION","DO DIFFUSE LAYER","DO REFLECTION LAYER","DO DIRECT LAYER","DO INDIRECT LAYER","DO DIRECT REFLECTION CAUSTIC LAYER","DO INDIRECT REFLECTION CAUSTIC LAYER","DO DIRECT REFRACTION CAUSTIC LAYER","DO INDIRECT REFRACTION CAUSTIC LAYER","DO RENDER CHANNEL","DO ALPHA CHANNEL","OPAQUE ALPHA","EMBED CHANNELS","DO IDOBJECT CHANNEL","DO IDMATERIAL CHANNEL","DO SHADOW PASS CHANNEL","DO MOTION CHANNEL","DO ROUGHNESS CHANNEL","DO FRESNEL CHANNEL","DO NORMALS CHANNEL","NORMALS CHANNEL SPACE","POSITION CHANNEL SPACE","MOTION CHANNEL TYPE","DO POSITION CHANNEL","DO ZBUFFER CHANNEL","DO SCATTERING_LENS","DO NOT SAVE MXI FILE","DO NOT SAVE IMAGE FILE","RENAME AFTER SAVING","SAVE LIGHTS IN SEPARATE FILES","USE MULTILIGHT"]
+cdef getSizeFromRenderParameter(const char* RenderParameter):
+    byte_vals = [b"DO SHARPNESS",b"DO DEVIGNETTING",b"REMOVE FILES AFTER COPY",b"DO MOTION BLUR",b"DO DISPLACEMENT",b"DO DISPERSION",b"DO DIFFUSE LAYER",
+                 b"DO REFLECTION LAYER",b"DO DIRECT LAYER",b"DO INDIRECT LAYER",b"DO DIRECT REFLECTION CAUSTIC LAYER",b"DO INDIRECT REFLECTION CAUSTIC LAYER",
+                 b"DO DIRECT REFRACTION CAUSTIC LAYER",b"DO INDIRECT REFRACTION CAUSTIC LAYER",b"DO RENDER CHANNEL",b"DO ALPHA CHANNEL",b"OPAQUE ALPHA",
+                 b"EMBED CHANNELS",b"DO IDOBJECT CHANNEL",b"DO IDMATERIAL CHANNEL",b"DO SHADOW PASS CHANNEL",b"DO MOTION CHANNEL",b"DO ROUGHNESS CHANNEL",
+                 b"DO FRESNEL CHANNEL",b"DO NORMALS CHANNEL",b"NORMALS CHANNEL SPACE",b"POSITION CHANNEL SPACE",b"MOTION CHANNEL TYPE",b"DO POSITION CHANNEL",
+                 b"DO ZBUFFER CHANNEL",b"DO SCATTERING_LENS",b"DO NOT SAVE MXI FILE",b"DO NOT SAVE IMAGE FILE",b"RENAME AFTER SAVING",b"SAVE LIGHTS IN SEPARATE FILES",
+                 b"USE MULTILIGHT"]
     if RenderParameter in byte_vals:
-        return sizeof(byte)
-    if RenderParameter in ["SAMPLING LEVEL"]:
-        return sizeof(float)
-    if RenderParameter in ["ENGINE"]:
-        return 3 * sizeof(char)
-    if RenderParameter in ["ZBUFFER RANGE","DEVIGNETTING","SCATTERING_LENS","SHARPNESS"]:
-        return sizeof( real )
-    if RenderParameter in ["NUM THREADS", "STOP TIME"]:
-        return sizeof( dword )
+        return (sizeof( byte ), 'BYTE')
+    if RenderParameter in [b"SAMPLING LEVEL"]:
+        return (sizeof( float ), 'FLOAT')
+    if RenderParameter in [b"ENGINE"]:
+        return (3 * sizeof( char ), 'CHAR')
+    if RenderParameter in [b"ZBUFFER RANGE",b"DEVIGNETTING",b"SCATTERING_LENS",b"SHARPNESS"]:
+        return (sizeof( real ), 'REAL')
+    if RenderParameter in [b"NUM THREADS", b"STOP TIME"]:
+        return (sizeof( dword ), 'DWORD')
     else: # is most likely a char *
-        return sizeof( char ) * 256
-'''
+        return (sizeof( char ) * 256, 'CHAR')
 
 cdef class point:
     cdef Cmaxwell.Cpoint *thisptr

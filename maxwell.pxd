@@ -19,8 +19,6 @@ cdef extern from "h/maxwell.h":
 
     ctypedef unsigned char byte "byte"
     ctypedef int bool "bool"
-    ctypedef void* const_Cobject "const Cmaxwell::Cobject"
-    ctypedef void* const_CmultiValueCmap "const CmultiValue::Cmap"
 
     cdef cppclass Cmaxwell:
         cppclass Cpointer:
@@ -140,8 +138,8 @@ cdef extern from "h/maxwell.h":
             byte    getNumBSDFs( byte& nBSDFs )
             Cmaxwell.Cbsdf   getBSDF( byte index )
 
-            void setAttribute( const char* name, const_CmultiValueCmap& map )
-            void setActiveAttribute( const char* name, const_CmultiValueCmap& map )
+            void setAttribute( const char* name, const Cmaxwell.CmultiValue.Cmap& map )
+            void setActiveAttribute( const char* name, const Cmaxwell.CmultiValue.Cmap& map )
 
             byte getAttribute( const char* name, Cmaxwell.CmultiValue.Cmap& map )
             byte getActiveAttribute( const char* name, Cmaxwell.CmultiValue.Cmap& map )
@@ -319,7 +317,7 @@ cdef extern from "h/maxwell.h":
             # Method:    mergeMeshes
             # Description: Merges an array of meshes into a single mesh.
             # The original meshes are not removed (it can be done later calling Cobject::free() ).
-            byte    mergeMeshes( const_Cobject* pMeshes, dword nMeshes )
+            byte    mergeMeshes( const Cobject* pMeshes, dword nMeshes )
 
             # Method:    get/setParent. Get/sets the parent object in the hierarchy
             byte    getParent( Cobject& parent )
