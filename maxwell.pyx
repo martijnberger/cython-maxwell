@@ -307,20 +307,21 @@ cdef object _t_Base(Cbase *p):
 cdef class Object:
     cdef Cmaxwell.Cobject *thisptr
     cdef Cmaxwell *sceneptr
+    cdef bool skip_dealloc
 
     def __cinit__(self):
-        pass
+        self.skip_dealloc =0
+        self.thisptr = NULL
 
     def __dealloc__(self):
-        pass
+        if self.skip_dealloc == 0 and self.thisptr is not NULL:
+            del self.thisptr
+            self.thisptr = NULL
 
     cdef setPointer(self,Cmaxwell * m, void* p):
         self.thisptr = new Cmaxwell.Cobject()
         self.sceneptr = m
         self.thisptr.setPointer(m,p)
-
-    #def free(self):
-    #    self.thisptr.free()
 
     def setName(self, name):
         cdef const char *c_string = name
@@ -343,14 +344,16 @@ cdef class Object:
         return True if res == 1 else False
 
     def getInstanced(self):
-        res = self.thisptr.getInstanced()
+        cdef Cmaxwell.Cobject res = self.thisptr.getInstanced()
         return _t_Object_from_pointer(self.sceneptr,  res.getPointer())
 
     def isRFRK(self):
         # Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
-        cdef byte res = 0
-        res = self.thisptr.isRFRK(res)
-        return res
+        cdef byte rfrk = 0
+        cdef byte res = self.thisptr.isRFRK(rfrk)
+        if res == 0:
+            raise TypeError("cannot call isRFRK on this")
+        return True if rfrk == 1 else False
 
     def isNull(self):
         return True if self.thisptr.isNull() == 1 else False
@@ -521,7 +524,7 @@ cdef class Object:
     #byte    getTriangleMaterial( dword iTriangle, Cmaterial& material )\
     def getTriangleMaterial(self,dword iTriangle):
         cdef Cmaxwell.Cmaterial* mat = new Cmaxwell.Cmaterial()
-        res = self.thisptr.getTriangleMaterial(iTriangle,deref(mat))
+        cdef byte res = self.thisptr.getTriangleMaterial(iTriangle,deref(mat))
         if res == 0:
             raise IndexError('Material out of range')
         return _t_Material(mat)
@@ -529,15 +532,67 @@ cdef class Object:
 
     #byte    setTriangleMaterial( dword iTriangle, Cmaterial material )
     def setTriangleMaterial(self, dword iTriangle, Material material ):
-        if type(material) != Material:
-            raise TypeError("set Material requires actual material")
         cdef byte res = self.thisptr.setTriangleMaterial(iTriangle, material.thisptr)
         if res == 0:
             raise IndexError('setTriangleMaterial failed')
 
 
     #byte    getGroupMaterial( dword iGroup, Cmaterial& material )
+    def getGroupMaterial(self, dword iGroup):
+        cdef Cmaxwell.Cmaterial* mat = new Cmaxwell.Cmaterial()
+        cdef byte res = self.thisptr.getGroupMaterial(iGroup,deref(mat))
+        if res == 0:
+            raise IndexError('Material out of range')
+        return _t_Material(mat)
+
+
     #byte    setGroupMaterial( dword iGroup, Cmaterial material )
+    def setGroupMaterial(self, iGroup, Material material ):
+        cdef byte res = self.thisptr.setGroupMaterial(iGroup, material.thisptr)
+        if res == 0:
+            raise IndexError('setTriangleMaterial failed')
+
+    #
+    # DISPLAY FUNCTIONS. Getters/setters of visibility attributes of  Cobject
+    #
+    def getHide(self):
+        #byte getHide( bool& hide )
+        cdef bool hide = 0
+        cdef byte res = self.thisptr.getHide(hide)
+        if res == 0:
+            raise TypeError('Cannot call getHide on this')
+        return True if hide == 1 else False
+
+
+    def setHide(self, bool hide):
+        #byte setHide( bool hide )
+        cdef byte res = self.thisptr.setHide(hide)
+        if res == 0:
+            raise TypeError('call setHide on this failed')
+
+    def getHideToCamera(self):
+        #byte getHideToCamera( bool& hide )
+        cdef bool hide = 0
+        cdef byte res = self.thisptr.getHideToCamera(hide)
+        if res == 0:
+            raise TypeError('Cannot call getHideToCamera on this')
+        return True if hide == 1 else False
+
+    def setHideToCamera(self, bool hide ):
+        #byte setHideToCamera( bool hide )
+        cdef byte res = self.thisptr.setHideToCamera(hide)
+        if res == 0:
+            raise TypeError('call setHideToCamera on this failed')
+
+    #byte getHideToReflectionsRefractions( bool& hide )
+    #byte setHideToReflectionsRefractions( bool hide )
+
+    #byte getHideToGI( bool& hide )
+    #byte setHideToGI( bool hide )
+
+    #byte isExcludedOfCutPlanes( bool& excluded )
+    #byte excludeOfCutPlanes( bool exclude )
+
 
 '''
 # Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
@@ -600,21 +655,6 @@ byte    generateCubicUVW( dword& iChannel, Cbase& projectorBase, bool mirrorBack
 byte    generatePlanarUVW( dword& iChannel, Cbase& projectorBase )
 
 
-byte    getTriangleGroup( dword iTriangle, dword& idGroup )
-byte    setTriangleGroup( dword iTriangle, dword idGroup )
-
-byte    getTriangleUVW( dword iTriangle, dword iChannelID, float& u1, float& v1, float& w1,\
-                                               float& u2, float& v2, float& w2, float& u3, float& v3, float& w3 )
-byte    setTriangleUVW( dword iTriangle, dword iChannelID, float u1, float v1, float w1,\
-                                                                                     float u2, float v2, float w2, float u3, float v3, float w3 )
-
-byte    getTriangleMaterial( dword iTriangle, Cmaterial& material )
-byte    setTriangleMaterial( dword iTriangle, Cmaterial material )
-
-byte    getGroupMaterial( dword iGroup, Cmaterial& material )
-byte    setGroupMaterial( dword iGroup, Cmaterial material )
-
-
 
 # Method: getWorldTransform
 # Description: Returns the world transform of the object
@@ -661,23 +701,7 @@ byte    isPosRotScaleInitialized( bool& init )
 # it is not needed to call it except in scenarios like the interactive engine
 byte    cleanGeometry()
 
-#
-# DISPLAY FUNCTIONS. Getters/setters of visibility attributes of  Cobject
-#
-byte getHide( bool& hide )
-byte setHide( bool hide )
 
-byte getHideToCamera( bool& hide )
-byte setHideToCamera( bool hide )
-
-byte getHideToReflectionsRefractions( bool& hide )
-byte setHideToReflectionsRefractions( bool hide )
-
-byte getHideToGI( bool& hide )
-byte setHideToGI( bool hide )
-
-byte isExcludedOfCutPlanes( bool& excluded )
-byte excludeOfCutPlanes( bool exclude )
 
 float* getReferenceProxyDisplayPoints( const_dword& percent, const_dword& maxPoints, dword& nPoints )
 
@@ -740,8 +764,9 @@ byte getGeometryProceduralExtensionParams( MXparamList*& extensionParams )
 byte getGeometryModifierExtensionsNumber( dword& numModifierExtensions )
 byte getGeometryModifierExtensionParamsAtIndex( MXparamList*& extensionParams, dword modifierExtensionsIndex )'''
 
-cdef object _t_Object_from_pointer(Cmaxwell* m,void *p):
+cdef object _t_Object_from_pointer(Cmaxwell* m,void *p, do_dealloc = 0):
     res = Object()
+    res.skip_dealloc = 1
     res.setPointer(m,p)
     return res
 
