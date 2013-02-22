@@ -546,6 +546,16 @@ cdef extern from "h/maxwell.h":
         byte setRenderParameter( const char* pParameterName, dword size, const void* pParameterValue )
         byte getRenderParameter( const char* pParameterName, dword size, void* pParameterValue )
 
+        Cmaxwell.Cobject  getObject( const char* pObjectName )
+
+        Cmaxwell.Cmaterial addMaterial( Cmaxwell.Cmaterial& material )
+
+        Cmaxwell.Cmaterial getMaterial( const char* pMaterialName )
+
+        Cmaxwell.Cobject     addObject( Cmaxwell.Cobject& object )
+
+        Cmaxwell.Cobject     createInstancement( const char* pName, Cmaxwell.Cobject& object )
+
 
 
 

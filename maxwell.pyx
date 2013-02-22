@@ -31,7 +31,8 @@ cdef class maxwell:
             raise Exception("Could not open: {}".format(filename))
 
     def writeMXS(self, filename):
-        cdef const char* f = filename
+        py_byte_string = filename.encode('UTF-8')
+        cdef const char* f = py_byte_string
         self.thisptr.writeMXS(f)
 
     def getSceneInfo(self):
@@ -55,7 +56,61 @@ cdef class maxwell:
             yield _t_Object_from_pointer(self.thisptr, <Cmaxwell.Cobject *>o.getPointer())
             o = it.next()
 
-    #broken need a way to get the actual object pointer
+    def getObject(self, name):
+        #Cmaxwell.Cobject  getObject( const char* pObjectName )
+        py_byte_string = name.encode('UTF-8')
+        cdef const char* n = py_byte_string
+        cdef Cmaxwell.Cobject o = self.thisptr.getObject(n)
+        #print(<size_t> &o)
+        #print(o.isNull())
+        if o.isNull() is False:
+            return _t_Object_from_pointer(self.thisptr, <Cmaxwell.Cobject* >o.getPointer())
+        else:
+            return False
+
+    def getMaterial(self, name):
+        #Cmaxwell.Cmaterial getMaterial( const char* pMaterialName )
+        py_byte_string = name.encode('UTF-8')
+        cdef const char* n = py_byte_string
+        cdef Cmaxwell.Cmaterial m = self.thisptr.getMaterial(n)
+        #print("Get Material {}".format(name))
+        if m.isNull() is not <byte>1:
+            return _t_Material(&m)
+        else:
+            print("not material")
+
+    def addMaterial(self, Material mat):
+        #Cmaxwell.Cmaterial addMaterial( Cmaxwell.Cmaterial& material )
+        print("Add material {}".format(mat.thisptr.isNull()))
+        cdef Cmaxwell.Cmaterial m = self.thisptr.addMaterial(mat.thisptr)
+        if m.isNull():
+            raise Exception("Could not add material")
+        return _t_Material(&m)
+
+    def addObject(self, Object o):
+        #Cmaxwell.Cobject     addObject( Cmaxwell.Cobject& object )
+        if o.isNull():
+            print("Cannot add non object")
+            return
+        cdef Cmaxwell.Cobject obj = self.thisptr.addObject(deref(o.thisptr))
+        if obj.isNull() is not False:
+            raise Exception("Could not add material")
+        else:
+            print("Object added {}".format(o.getName()))
+            return _t_Object_from_pointer(self.thisptr, <Cmaxwell.Cobject *>obj.getPointer())
+
+
+    def createInstancement(self, name, Object o):
+        #Cmaxwell.Cobject     createInstancement( const char* pName, Cmaxwell.Cobject& object )
+        py_byte_string = name.encode('UTF-8')
+        cdef const char* n = py_byte_string
+        cdef Cmaxwell.Cobject obj = self.thisptr.createInstancement(n, deref(o.thisptr))
+        #if obj.isNull() is not <byte>1:
+        #    raise Exception("Could not createInstancement {}".format(name))
+        return _t_Object_from_pointer(self.thisptr, <Cmaxwell.Cobject *>obj.getPointer())
+
+
+            #broken need a way to get the actual object pointer
     def getMaterialsIterator(self):
         #    #return ObjectIterator(self)
         cdef Cmaxwell.Cmaterial.Citerator it
@@ -218,6 +273,11 @@ cdef class Vector:
 
     __repr__ = __str__
 
+    def scale(self, double scale):
+        self.thisptr.x *= scale
+        self.thisptr.y *= scale
+        self.thisptr.z *= scale
+
 
     def set(self, double x, double y, double z):
         self.thisptr.x = x
@@ -317,6 +377,12 @@ cdef class Object:
         if self.skip_dealloc == 0 and self.thisptr is not NULL:
             del self.thisptr
             self.thisptr = NULL
+
+
+    def free(self):
+        #print("attemting to free {}".format(self.getName()))
+        self.thisptr.free()
+        self.thisptr = NULL
 
     cdef setPointer(self,Cmaxwell * m, void* p):
         self.thisptr = new Cmaxwell.Cobject()
@@ -593,6 +659,61 @@ cdef class Object:
     #byte isExcludedOfCutPlanes( bool& excluded )
     #byte excludeOfCutPlanes( bool exclude )
 
+    def isPosRotScaleInitialized(self):
+        #byte    isPosRotScaleInitialized( bool& init )
+        cdef bool init = 0
+        cdef byte res = self.thisptr.isPosRotScaleInitialized(init)
+        if res == 0:
+            raise TypeError('cannot call isPosRotScaleInitialized() on this')
+        return True if init == 1 else False
+
+
+    def getPivotRotation(self):
+        #byte    getPivotRotation( Cvector& vector )
+        cdef Cvector v = Cvector()
+        cdef byte res = self.thisptr.getPivotRotation(v)
+        if res == 0:
+            raise TypeError('cannot call getPivotRotation() on this')
+        return _t_Vector(&v)
+
+    def setPivotRotation(self, Vector v):
+        #byte    setPivotRotation( Cvector vector )
+        cdef byte res = self.thisptr.setPivotRotation(deref(v.thisptr))
+        if res == 0:
+            raise TypeError('cannot call setPivotRotation() on this')
+
+    def getPivotPosition(self):
+        #byte    getPivotPosition( Cvector& vector )
+        resV = Vector()
+        cdef byte res = self.thisptr.getPivotPosition(deref(resV.thisptr))
+
+
+
+    def setPivotPosition(self, Vector v):
+        #byte    setPivotPosition( Cvector vector )
+        pass
+
+    def getPosition(self):
+        #byte    getPosition( Cvector& vector )
+        pass
+
+    def setPosition(self, Vector v):
+        #byte    setPosition( Cvector vector )
+        cdef byte res = self.thisptr.setPosition(deref(v.thisptr))
+
+    def getRotation(self):
+        #byte    getRotation( Cvector& vector )
+        pass
+
+    def setRotation(self, Vector v):
+        #byte    setRotation( Cvector vector )
+        cdef byte res = self.thisptr.setPosition(deref(v.thisptr))
+
+        #byte    getScale( Cvector& vector )
+        #byte    setScale( Cvector vector )
+
+        #byte    getShear( Cvector& vector )
+        #byte    setShear( Cvector vector )
 
 '''
 # Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
@@ -672,28 +793,6 @@ byte    getTransformStepInfoByIndex( Cbase& base, Cbase& pivot, real& time, cons
 #Global base, assumes global pivot is located at 0,0,0 and
 #with pivot axis 1,0,0  0,1,0   0,0,1
 
-# Method:    get/set position/rotation/scale/shear
-# Description: Used by Maxwell Studio (not needed for rendering)
-# isPosRotScaleInitialized returns true by reference if these methods have been used for the given Cobject
-byte    getPosition( Cvector& vector )
-byte    setPosition( Cvector vector )
-
-byte    getRotation( Cvector& vector )
-byte    setRotation( Cvector vector )
-
-byte    getScale( Cvector& vector )
-byte    setScale( Cvector vector )
-
-byte    getShear( Cvector& vector )
-byte    setShear( Cvector vector )
-
-byte    getPivotPosition( Cvector& vector )
-byte    setPivotPosition( Cvector vector )
-
-byte    getPivotRotation( Cvector& vector )
-byte    setPivotRotation( Cvector vector )
-
-byte    isPosRotScaleInitialized( bool& init )
 
 # Method:    cleanGeometry
 # Description: Optional routine that removes degenerated triangles, repeated/unused vertex and normals.
