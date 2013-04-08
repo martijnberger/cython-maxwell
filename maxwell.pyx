@@ -24,8 +24,8 @@ cdef class maxwell:
         del self.thisptr
 
     def readMXS(self, filename):
-        a = bytes(filename, "UTF-8")
-        cdef const char* f = a
+        py_byte_string = filename.encode('UTF-8')
+        cdef const char* f = py_byte_string
         res = self.thisptr.readMXS(f, Cmaxwell.CoptionsReadMXS())
         if res == 0:
             raise Exception("Could not open: {}".format(filename))
@@ -77,11 +77,12 @@ cdef class maxwell:
         if m.isNull() is not <byte>1:
             return _t_Material(&m)
         else:
-            print("not material")
+            return False
 
     def addMaterial(self, Material mat):
         #Cmaxwell.Cmaterial addMaterial( Cmaxwell.Cmaterial& material )
-        print("Add material {}".format(mat.thisptr.isNull()))
+        if mat.thisptr.isNull() != 0:
+            raise Exception("Can not add NULL material")
         cdef Cmaxwell.Cmaterial m = self.thisptr.addMaterial(mat.thisptr)
         if m.isNull():
             raise Exception("Could not add material")
@@ -253,11 +254,12 @@ cdef class Vector:
     cdef Cvector *thisptr
     cdef bool cleanup
 
-    def __cinit__(self, x=0, y=0, z=0, bool cleanup=True):
-        self.thisptr = new Cvector(x,y,z)
-        self.cleanup = cleanup
+    def __cinit__(self, x=0, y=0, z=0, bool __cleanup=True, bool __skip_create=False):
+        if not __skip_create:
+            self.thisptr = new Cvector(x,y,z)
+        self.cleanup = __cleanup
 
-    def __init__(self, x = 0, y = 0, z = 0, cleanup=True):
+    def __init__(self, x=0, y=0, z=0, __cleanup=True, __thisptr=None):
         self.x = x
         self.y = y
         self.z = z
@@ -284,6 +286,29 @@ cdef class Vector:
         self.thisptr.y = y
         self.thisptr.z = z
 
+    def __getitem__(self,int n):
+        if n == 0:
+            return self.x
+        elif n == 1:
+            return self.y
+        elif n == 2:
+            return self.z
+        else:
+            raise Exception("Access vector out of range")
+
+    def __setitem__(self,int n, double i):
+        if n == 0:
+            self.x = i
+        elif n == 1:
+            self.y = i
+        elif n ==2:
+            self.z = i
+        else:
+            raise Exception("Access vector out of range")
+
+    def __len__(self):
+        return 3
+
     property x:
         def __get__(self): return self.thisptr.x
         def __set__(self, double x): self.thisptr.x = x
@@ -297,9 +322,8 @@ cdef class Vector:
         def __set__(self, double z): self.thisptr.z = z
 
 
-cdef object _t_Vector(Cvector *p, cleanup=True):
-    res = Vector(cleanup=cleanup)
-    del res.thisptr # till i find a better way to do things we have some double allocation going on
+cdef object _t_Vector(Cvector *p, bool cleanup=True):
+    res = Vector(__cleanup=cleanup, __skip_create=True)
     res.thisptr = p
     return res
 
@@ -328,7 +352,10 @@ cdef class Base:
         self.z = z
 
     def __str__(self):
-        return "Base : origin: {} {} {}".format(self.origin.x,self.origin.y,self.origin.z)
+        return "origin : {} {} {}".format(self.origin.x,self.origin.y,self.origin.z) + \
+               "\n     x : {} {} {}".format(self.x.x,self.x.y,self.x.z) + \
+               "\n     y : {} {} {}".format(self.y.x,self.y.y,self.y.z) + \
+               "\n     z : {} {} {}".format(self.z.x,self.z.y,self.z.z)
 
     __repr__ = __str__
     
@@ -904,8 +931,23 @@ cdef class Material:
         cdef Cmaxwell.CmaterialLayer l = self.thisptr.getLayer(index)
         return _t_MaterialLayer(l)
 
+    def read(self, filename):
+        py_byte_string = filename.encode('UTF-8')
+        cdef const char* f = py_byte_string
+        cdef byte r = self.thisptr.read(f)
+        if r == <byte>0:
+            raise IOError('Could not material read {}'.format(f))
+
+    def write(self, filename):
+        py_byte_string = filename.encode('UTF-8')
+        cdef const char* f = py_byte_string
+        cdef byte r = self.thisptr.write(f)
+        if r == <byte>0:
+            raise IOError('Could not material read {}'.format(f))
+
     def __repr__(self):
         return "Maxwell material:" + self.getName()
+
 
 cdef object _t_Material(Cmaxwell.Cmaterial* p):
     res = Material(__cleanup=False)
