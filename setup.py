@@ -35,6 +35,7 @@ setup(
     include_dirs=["h"],          # usual stuff
     libraries=libraries,             # ditto
     extra_compile_args=extra_compile_args,
-    extra_link_args=extra_link_args
+    extra_link_args=extra_link_args,
+    embedsignature=True
     )]
     )

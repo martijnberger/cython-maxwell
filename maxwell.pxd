@@ -554,7 +554,9 @@ cdef extern from "h/maxwell.h":
 
         Cmaxwell.Cobject     addObject( Cmaxwell.Cobject& object )
 
-        Cmaxwell.Cobject     createInstancement( const char* pName, Cmaxwell.Cobject& object )
+        Cmaxwell.Cobject createMesh( const char* pName, dword nVertexes, dword nNormals, dword nTriangles, dword nPositionsPerVertex )
+
+        Cmaxwell.Cobject createInstancement( const char* pName, Cmaxwell.Cobject& object )
 
 
 

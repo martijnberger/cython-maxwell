@@ -101,6 +101,21 @@ cdef class maxwell:
             return _t_Object_from_pointer(self.thisptr, <Cmaxwell.Cobject *>obj.getPointer())
 
 
+    def addCamera(self, name, dword nSteps, real shutter, real filmWidth, real filmHeight, real iso, DiaphragmType, real angle, dword nBlades, dword fps, dword xRes, dword yRes, real pixelAspect, byte projectionType=0):
+    #Cmaxwell.Ccamera addCamera( const char* pName, dword nSteps, real shutter, real filmWidth,
+    #real filmHeight, real iso, const char* pDiaphragmType, real angle,
+    #dword nBlades, dword fps, dword xRes, dword yRes, real pixelAspect,
+    #byte projectionType = 0)
+        py_byte_string = name.encode('UTF-8')
+        cdef const char* pName = py_byte_string
+        py_byte_string2 = DiaphragmType.encode('UTF-8')
+        cdef const char* pDiaphragmType = py_byte_string2
+        cdef Cmaxwell.Ccamera obj = self.thisptr.addCamera(pName, nSteps, shutter, filmWidth,filmHeight, iso, pDiaphragmType, angle, nBlades,  fps,  xRes,  yRes,  pixelAspect)
+        return _t_Camera(obj)
+
+
+
+
     def createInstancement(self, name, Object o):
         #Cmaxwell.Cobject     createInstancement( const char* pName, Cmaxwell.Cobject& object )
         py_byte_string = name.encode('UTF-8')
@@ -109,6 +124,14 @@ cdef class maxwell:
         #if obj.isNull() is not <byte>1:
         #    raise Exception("Could not createInstancement {}".format(name))
         return _t_Object_from_pointer(self.thisptr, <Cmaxwell.Cobject *>obj.getPointer())
+
+    def createMesh(self, name, dword nVertexes, dword nNormals, dword nTriangles, dword nPositionsPerVertex ):
+    #Cmaxwell.Cobject createMesh( const char* pName, dword nVertexes, dword nNormals, dword nTriangles, dword nPositionsPerVertex )
+        py_byte_string = name.encode('UTF-8')
+        cdef const char* pName = py_byte_string
+        cdef Cmaxwell.Cobject obj = self.thisptr.createMesh( pName, nVertexes, nNormals, nTriangles, nPositionsPerVertex )
+        return _t_Object_from_pointer(self.thisptr, <Cmaxwell.Cobject *>obj.getPointer())
+
 
 
             #broken need a way to get the actual object pointer
@@ -209,6 +232,7 @@ cdef getSizeFromRenderParameter(const char* RenderParameter):
     else: # is most likely a char *
         return (sizeof( char ) * 256, 'CHAR')
 
+'''
 cdef class point:
     cdef Cmaxwell.Cpoint *thisptr
     cdef bool cleanup
@@ -248,7 +272,7 @@ cdef object _t_Point(Cpoint *p):
     del res.thisptr # till i find a better way to do things we have some double allocation going on
     res.thisptr = p
     return res
-
+'''
 
 cdef class Vector:
     cdef Cvector *thisptr
@@ -350,6 +374,7 @@ cdef class Base:
         self.x = x
         self.y = y
         self.z = z
+        return self
 
     def __str__(self):
         return "origin : {} {} {}".format(self.origin.x,self.origin.y,self.origin.z) + \
@@ -529,10 +554,10 @@ cdef class Object:
         res = self.thisptr.getVertex(iVertex,iPosition, deref(p))
         if res == 0:
             raise IndexError('Vertex out of range')
-        return _t_Point(p)
+        return _t_Vector(p)
 
     #byte    setVertex( dword iVertex, dword iPosition, const_Cpoint& point )
-    def setVertex(self, dword iVertex, dword iPosition, point p):
+    def setVertex(self, dword iVertex, dword iPosition, Vector p):
         self.thisptr.setVertex(iVertex,iPosition,deref(p.thisptr))
         p.cleanup = False # make sure we dont free the Cpoint when we promised not to
 
@@ -1084,7 +1109,7 @@ cdef class camera:
     def getName(self):
         return self.thisptr.getName().decode('UTF-8')
 
-    def setStep(self,dword iStep, point origin, point focalPoint, Vector up, focalLength, fStop, stepTime, focalLengthNeedCorrection = True):
+    def setStep(self,dword iStep, Vector origin, Vector focalPoint, Vector up, focalLength, fStop, stepTime, focalLengthNeedCorrection = True):
         cdef byte fLnC = 0 #focalLengthNeedCorrection
         cdef dword step = iStep
         cdef Cpoint o = deref(origin.thisptr)
@@ -1103,7 +1128,7 @@ cdef class camera:
         cdef real fS = 0
         cdef real sT = 0
         self.thisptr.getStep( iStep, deref(o), deref(fP), deref(u), fL, fS, sT )
-        return [_t_Point(o),_t_Point(fP),_t_Vector(u),fL,fS,sT]
+        return [_t_Vector(o),_t_Vector(fP),_t_Vector(u),fL,fS,sT]
 
     def setOrthoValues(self, dword iStep, real orthoX, real orthoY, real orthoZoom, real focalLength, real fStop ):
         self.thisptr.setOrthoValues( iStep,orthoX, orthoY, orthoZoom, focalLength, fStop )
