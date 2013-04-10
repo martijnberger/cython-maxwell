@@ -254,12 +254,11 @@ cdef class Vector:
     cdef Cvector *thisptr
     cdef bool cleanup
 
-    def __cinit__(self, x=0, y=0, z=0, bool __cleanup=True, bool __skip_create=False):
-        if not __skip_create:
-            self.thisptr = new Cvector(x,y,z)
+    def __cinit__(self, x=0, y=0, z=0, bool __cleanup=True):
+        self.thisptr = new Cvector(x,y,z)
         self.cleanup = __cleanup
 
-    def __init__(self, x=0, y=0, z=0, __cleanup=True, __thisptr=None):
+    def __init__(self, x=0, y=0, z=0, __cleanup=True):
         self.x = x
         self.y = y
         self.z = z
@@ -323,7 +322,8 @@ cdef class Vector:
 
 
 cdef object _t_Vector(Cvector *p, bool cleanup=True):
-    res = Vector(__cleanup=cleanup, __skip_create=True)
+    res = Vector(__cleanup=cleanup)
+    del res.thisptr
     res.thisptr = p
     return res
 
