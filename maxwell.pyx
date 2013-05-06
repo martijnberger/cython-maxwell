@@ -79,6 +79,16 @@ cdef class maxwell:
         else:
             return False
 
+    def readMaterial(self, fileName ):
+        py_byte_string = fileName.encode('UTF-8')
+        cdef const char* f = py_byte_string
+        cdef Cmaxwell.Cmaterial m = self.thisptr.readMaterial(f)
+        if m.isNull() is not <byte>1:
+            return _t_Material(&m)
+        else:
+            raise Exception("Could not read material: {}".format(fileName))
+
+
     def addMaterial(self, Material mat):
         #Cmaxwell.Cmaterial addMaterial( Cmaxwell.Cmaterial& material )
         if mat.thisptr.isNull() != 0:
@@ -110,7 +120,7 @@ cdef class maxwell:
         cdef const char* pName = py_byte_string
         py_byte_string2 = DiaphragmType.encode('UTF-8')
         cdef const char* pDiaphragmType = py_byte_string2
-        cdef Cmaxwell.Ccamera obj = self.thisptr.addCamera(pName, nSteps, shutter, filmWidth,filmHeight, iso, pDiaphragmType, angle, nBlades,  fps,  xRes,  yRes,  pixelAspect)
+        cdef Cmaxwell.Ccamera obj = self.thisptr.addCamera(pName, nSteps, shutter, filmWidth, filmHeight, iso, pDiaphragmType, angle, nBlades,  fps,  xRes,  yRes,  pixelAspect, 0)
         return _t_Camera(obj)
 
 

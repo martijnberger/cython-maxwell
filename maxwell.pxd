@@ -14,6 +14,10 @@ cdef extern from "h/flags.h":
         Cflags()
 
 cdef extern from "h/maxwell.h":
+    enum material_blendering_modes "Cmaxwell::Cmaterial::BLENDING_MODES":
+        BLENDING_NORMAL
+        BLENDING_ADDITIVE
+
     cdef cppclass MXparamList:
         pass
 
@@ -242,28 +246,66 @@ cdef extern from "h/maxwell.h":
                 Cmaxwell.Cmaterial first(Cmaxwell* pMaxwell)
                 Cmaxwell.Cmaterial next()
             Cmaterial()
+
             Cmaxwell.Cmaterial createCopy()
             byte free()
             byte extract()
             byte getVersion(const char* pFileName, float& version)
-            
-            byte getNumLayers( byte& nLayers )
-            Cmaxwell.CmaterialLayer getLayer( byte index )
-            
-            byte setReference( const byte& enabled, const char* mxmPath )
-            const char* getReference( byte& enabled )
-            
-            byte setDescription( const char* pDescription )
-            const char* getDescription( )
-            
-            byte setUuid( const char* pUuid )
-            const char* getUuid( )
-            
+
             byte setName(const char* pFileName)
             const char* getName()
-            
+
+            byte setReference( const byte& enabled, const char* mxmPath )
+            const char* getReference( byte& enabled )
+
+            byte setDescription( const char* pDescription )
+            const char* getDescription( )
+
+            byte setUuid( const char* pUuid )
+            const char* getUuid( )
+
+            byte setDirty()
+            byte isDirty( bool& dirty )
+
+            byte forceToWriteIntoScene()
+            byte belongToScene( bool& belong )
+
+            byte isEmpty( byte& empty )
+            byte setEmpty( )
+
             byte read( const char* pFileName )
             byte write( const char* pFileName )
+
+            byte setDispersion( bool enabled )
+            byte getDispersion( bool& enabled )
+
+            byte setMatte( bool enabled )
+            byte getMatte( bool& enabled )
+
+            byte setMatteShadow( bool enabled )
+            byte getMatteShadow( bool& enabled )
+
+            Cmaxwell.CmaterialLayer addLayer( )
+            byte getNumLayers( byte& nLayers )
+            Cmaxwell.CmaterialLayer getLayer( byte index )
+
+            byte setLayerDisplacement( dword index )
+            byte getLayerDisplacement( dword& index, bool& displacementOk )
+
+            byte setColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
+            byte getColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
+
+            byte setActiveColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
+            byte getActiveColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
+
+            byte setNormalMapState( bool enabled )
+            byte getNormalMapState( bool& enabled )
+
+            byte setColorID( const Crgb& color )
+            byte getColorID( Crgb& color )
+
+            # XXX TODO preview functions (line 434 onwards
+
 
         cppclass Cobject(Cpointer):
             cppclass Citerator:
@@ -535,7 +577,7 @@ cdef extern from "h/maxwell.h":
         Cmaxwell.Ccamera addCamera( const char* pName, dword nSteps, real shutter, real filmWidth,
                            real filmHeight, real iso, const char* pDiaphragmType, real angle,
                            dword nBlades, dword fps, dword xRes, dword yRes, real pixelAspect,
-                           byte projectionType = 0)
+                           byte projectionType)
 
         # Method:    getCamera. Given the name of a camera this function returns its Ccamera pointer.^M
         Cmaxwell.Ccamera getCamera( const char* pCameraName )
@@ -558,7 +600,22 @@ cdef extern from "h/maxwell.h":
 
         Cmaxwell.Cobject createInstancement( const char* pName, Cmaxwell.Cobject& object )
 
+        byte setPath( const char* pType, const char* pPath, byte& outputBitDepthMode )
+        const char*  getPath( const char* pType, byte& outputBitDepthMode )
 
+        byte addSearchingPath( const char* pPath)
+
+        byte getSearchingPaths( dword& numPaths, char** & paths )
+
+        #0: Latitude / Longitude
+        #1: Angles (zenith /azimuth)
+        #2: Direction (vector)
+        byte getSunPositionType( byte& positionType )
+        byte setSunPositionType( const byte& positionType )
+
+        Cmaxwell.Cmaterial readMaterial( const char* pFileName )
+
+        
 
 
 
