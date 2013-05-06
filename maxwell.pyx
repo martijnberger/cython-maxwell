@@ -80,6 +80,9 @@ cdef class maxwell:
             return False
 
     def readMaterial(self, fileName ):
+        '''
+            readMaterial. Reads a material from disk. fileName = material path
+        '''
         py_byte_string = fileName.encode('UTF-8')
         cdef const char* f = py_byte_string
         cdef Cmaxwell.Cmaterial m = self.thisptr.readMaterial(f)
@@ -944,15 +947,12 @@ cdef class Material:
         #    del &self.thisptr
         pass
 
-    cdef Cmaxwell.Cmaterial* getThisptr(self):
-        return &self.thisptr
-
-    def setName(self, name):
-        cdef const char *c_string = name
-        self.thisptr.setName(c_string)
-
-    def getName(self):
-        return self.thisptr.getName().decode('UTF-8')
+    property name:
+        def __set__(self, name):
+            cdef const char *c_string = name
+            self.thisptr.setName(c_string)
+        def __get__(self):
+            return self.thisptr.getName().decode('UTF-8')
 
     def isNull(self):
         return True if self.thisptr.isNull() == 1 else False
@@ -979,6 +979,51 @@ cdef class Material:
         cdef byte r = self.thisptr.write(f)
         if r == <byte>0:
             raise IOError('Could not material read {}'.format(f))
+
+
+    property NormalMapState:
+        def __get__(self):
+            '''
+                normal mapping for the global bump parameter
+            '''
+            cdef bool enabled = 0
+            cdef byte res = self.thisptr.getNormalMapState(enabled)
+            if res == 0:
+                raise IOError('Could not read from material')
+            return enabled
+
+    property colorID:
+        def __get__(self):
+            cdef Crgb col
+            cdef byte res = self.thisptr.getColorID(col)
+            if res == 0:
+                raise IOError('Could not read from material')
+            return _t_rgb(&col)
+
+    property dispersion:
+        def __get__(self):
+            cdef bool enabled = 0
+            cdef byte res = self.thisptr.getDispersion(enabled)
+            if res == 0:
+                raise IOError('Could not read from material')
+            return enabled
+
+    property matte:
+        def __get__(self):
+            cdef bool enabled = 0
+            cdef byte res = self.thisptr.getMatte(enabled)
+            if res == 0:
+                raise IOError('Could not read from material')
+            return enabled
+
+
+    property matteShadow:
+        def __get__(self):
+            cdef bool enabled = 0
+            cdef byte res = self.thisptr.getMatteShadow(enabled)
+            if res == 0:
+                raise IOError('Could not read from material')
+            return enabled
 
     def __repr__(self):
         return "Maxwell material:" + self.getName()

@@ -359,11 +359,11 @@ cdef extern from "h/maxwell.h":
             # Method:    mergeMeshes
             # Description: Merges an array of meshes into a single mesh.
             # The original meshes are not removed (it can be done later calling Cobject::free() ).
-            byte    mergeMeshes( const Cobject* pMeshes, dword nMeshes )
+            byte    mergeMeshes( const Cmaxwell.Cobject* pMeshes, dword nMeshes )
 
             # Method:    get/setParent. Get/sets the parent object in the hierarchy
-            byte    getParent( Cobject& parent )
-            byte    setParent( Cobject parent )
+            byte    getParent( Cmaxwell.Cobject& parent )
+            byte    setParent( Cmaxwell.Cobject parent )
 
             # Method:    get/setUuid. Uuid that can be used for custom purposes
             const char* getUuid( )
