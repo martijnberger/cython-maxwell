@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-
-ctypedef unsigned int dword
-ctypedef unsigned short word
-ctypedef double real
-
+from defines cimport *
 from vectors cimport *
 
 cdef extern from "h/color.h":

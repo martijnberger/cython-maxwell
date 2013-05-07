@@ -2,12 +2,7 @@
 
 from cython.operator cimport dereference as deref, preincrement as inc
 from libc.stdlib cimport malloc, free
-
-from vectors cimport *
-from base cimport *
-from color cimport *
 from maxwell cimport Cmaxwell, byte
-#from maxwell cimport *
 
 cdef byte mwcallback(byte isError, const char *pMethod, const char *pError, const void *pValue):
     if isError != 3: # 3 == INFO ???

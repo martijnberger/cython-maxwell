@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
 
-ctypedef unsigned int dword
-ctypedef unsigned short word
-ctypedef double real
-
 from vectors cimport *
 from base cimport *
 from color cimport *
-
 
 cdef extern from "h/flags.h":
     cdef cppclass Cflags[Cprecision]:
