@@ -3,8 +3,9 @@
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
-
 import platform
+
+extra = True
 
 if platform.system() == 'Linux':
     libraries = ["maxwellsdk"]
@@ -15,11 +16,12 @@ elif platform.system() == 'Darwin': # OS x
     extra_compile_args=['-D_MACOSX','-D_LINUX','-DCOMPILER_GCC']
     extra_link_args=['-Llib/','-framework CoreGraphics']
 else:
-    libraries=["maxwellsdk"]
-    extra_compile_args=['-D_LINUX']
-    extra_link_args=['-Llib']
+    libraries=["maxwell_plugins"]
+    extra_compile_args=['/Zp8']
+    extra_link_args=['/LIBPATH:Lib']
+    extra = False
 
-if True:
+if extra:
     extra_compile_args.append('-g')
     extra_compile_args.append('-ggdb')
     extra_link_args.append('-g')
