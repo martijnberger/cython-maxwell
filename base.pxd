@@ -2,7 +2,7 @@
 
 from vectors cimport *
 
-cdef extern from "h/base.h":
+cdef extern from "h/mx_base.h":
     ctypedef Cvector3DT CbaseVector "Cvector3DT<Cprecision>"
     cdef cppclass CbaseT[Cprecicion]:
         CbaseT()

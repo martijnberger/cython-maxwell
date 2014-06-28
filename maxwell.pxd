@@ -4,14 +4,47 @@ from vectors cimport *
 from base cimport *
 from color cimport *
 
-cdef extern from "h/flags.h":
+cdef extern from "h/mx_flags.h":
     cdef cppclass Cflags[Cprecision]:
         Cflags()
+
+cdef extern from "mx_texturemap.h":
+    enum InterpolationType:
+        NO_INTERPOLATION "CtextureMap::NO_INTERPOLATION"
+        INTERPOLATION_CUADRATIC "CtextureMap::INTERPOLATION_CUADRATIC"
+
+    cdef cppclass CtextureMap:
+        CtextureMap()
+
+        const char* getPath( )
+
+
+
+
+cdef extern from "h/maxwellenums.h" namespace "maxwellrender":
+    enum AttributeType:
+        MAP_TYPE_VALUE              = 0,
+        MAP_TYPE_RGB                = 1,
+        MAP_TYPE_BITMAP             = 2,
+        MAP_TYPE_SPECTRUM_FILE      = 3
+
+    enum LensType:
+        TYPE_THIN_LENS			= 0
+        TYPE_PINHOLE			= 1
+        TYPE_ORTHO				= 2
+        TYPE_FISHEYE			= 3
+        TYPE_SPHERICAL			= 4
+        TYPE_CYLINDRICAL		= 5
 
 cdef extern from "h/maxwell.h":
     enum material_blendering_modes "Cmaxwell::Cmaterial::BLENDING_MODES":
         BLENDING_NORMAL
         BLENDING_ADDITIVE
+
+    enum ReadMxsOptions "Cmaxwell::ReadMxsOptions":
+        READ_ALL     "Cmaxwell::READ_ALL"
+        SKIP_OBJECTS "Cmaxwell::SKIP_OBJECTS"
+        SKIP_MESHES  "Cmaxwell::SKIP_MESHES"
 
     cdef cppclass MXparamList:
         pass
@@ -20,47 +53,28 @@ cdef extern from "h/maxwell.h":
     ctypedef int bool "bool"
 
     cdef cppclass Cmaxwell:
+
         cppclass Cpointer:
             Cpointer()
             bool isNull()
             void* getPointer()
 
-        cppclass CmultiValue:
-            #const char* pID
-            #const char* pType
-            #void* pParameter
-            CmultiValue(const char* _pID, const char* _pType, void* _pParameter)
-
-            cppclass Cmap:
-                byte        type
-                real        value
-                Crgb        rgb
-
-                char*       pFileName
-                Cpoint2D    scale
-                Cpoint2D    offset
-                dword       uvwChannel
-                byte        typeInterpolation
-                byte        uIsTiled
-                byte        vIsTiled
-                byte        invert
-                byte        doGammaCorrection
-                byte        useAbsoluteUnits
-                byte        normalMappingFlipRed
-                byte        normalMappingFlipGreen
-                byte        normalMappingFullRangeBlue
-                byte        useAlpha
-                float       saturation # // range: [-1.0, 1.0]
-                float       contrast #   // range: [-1.0, 1.0]
-                float       brightness # // range: [-1.0, 1.0]
-                float       clampMin #   // range: [0.0, 1.0]
-                float       clampMax #   // range: [0.0, 1.0]
-                #CextensionList     extensionList;
-                Cmap( )
-
 
         cppclass CmaterialPointer(Cpointer):
             CmaterialPointer()
+
+
+
+        cppclass Cattribute:
+            AttributeType	activeType # Default = TYPE_VALUE
+            real			value      # Default = 0;
+            Crgb			rgb        # Init to medium grey 127, 127, 127.
+            CtextureMap		textureMap
+            char*			spectrumFile
+
+            Cattribute( )
+
+            Cattribute( const Cattribute& other )
 
         cppclass Creflectance(CmaterialPointer):
             Creflectance()
@@ -71,7 +85,9 @@ cdef extern from "h/maxwell.h":
             byte setComplexIor( const char* pFileName )
             const char* getComplexIor( )
 
-            byte getColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
+            byte  getAttribute( const char* attrName, Cattribute& attr )
+
+            #byte getColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
         cppclass Cbsdf(CmaterialPointer):
             Cbsdf()
             byte    setName( const char* pName )
@@ -80,15 +96,11 @@ cdef extern from "h/maxwell.h":
             byte    setState( bool enabled )
             byte    getState( bool& enabled )
 
-            byte    setWeight( Cmaxwell.CmultiValue.Cmap& map )
-            byte    getWeight( Cmaxwell.CmultiValue.Cmap& map )
-            byte    setActiveWeight( Cmaxwell.CmultiValue.Cmap& map )
-            byte    getActiveWeight( Cmaxwell.CmultiValue.Cmap& map )
+            #byte    setWeight( Cmaxwell.CmultiValue.Cmap& map )
+            #byte    getWeight( Cmaxwell.CmultiValue.Cmap& map )
+            #byte    setActiveWeight( Cmaxwell.CmultiValue.Cmap& map )
+            #byte    getActiveWeight( Cmaxwell.CmultiValue.Cmap& map )
             Cmaxwell.Creflectance  getReflectance( )
-
-
-        cppclass CoptionsReadMXS(Cflags):
-            CoptionsReadMXS()
 
         cppclass CsceneInfo:
             dword nMeshes, nTriangles, nVertexes, nNormals, nMaterials, nBitmaps
@@ -108,11 +120,11 @@ cdef extern from "h/maxwell.h":
             byte    setStackedBlendingMode( byte mode )
             byte    getStackedBlendingMode( byte& mode )
 
-            byte    setWeight( Cmaxwell.CmultiValue.Cmap& map )
-            byte    getWeight( Cmaxwell.CmultiValue.Cmap& map )
+            #byte    setWeight( Cmaxwell.CmultiValue.Cmap& map )
+            #byte    getWeight( Cmaxwell.CmultiValue.Cmap& map )
 
-            byte    setActiveWeight( Cmaxwell.CmultiValue.Cmap& map )
-            byte    getActiveWeight( Cmaxwell.CmultiValue.Cmap& map )
+            #byte    setActiveWeight( Cmaxwell.CmultiValue.Cmap& map )
+            #byte    getActiveWeight( Cmaxwell.CmultiValue.Cmap& map )
 
             Cmaxwell.CmaterialEmitter    createEmitter( )
             Cmaxwell.CmaterialEmitter    getEmitter( )
@@ -121,8 +133,8 @@ cdef extern from "h/maxwell.h":
             byte        enableDisplacement( bool enable )
             byte        isDisplacementEnabled( bool& enabled )
 
-            byte        setDisplacementMap( Cmaxwell.CmultiValue.Cmap& map )
-            byte        getDisplacementMap( Cmaxwell.CmultiValue.Cmap& map )
+            #byte        setDisplacementMap( Cmaxwell.CmultiValue.Cmap& map )
+            #byte        getDisplacementMap( Cmaxwell.CmultiValue.Cmap& map )
 
             byte        setDisplacementCommonParameters( byte displacementType, real subdivisionLevel, real smoothness, dword minLOD = 0, dword maxLOD = 0 )
             byte        getDisplacementCommonParameters( byte& displacementType, real& subdivisionLevel, real& smoothness, dword& minLOD, dword& maxLOD )
@@ -137,26 +149,26 @@ cdef extern from "h/maxwell.h":
             byte    getNumBSDFs( byte& nBSDFs )
             Cmaxwell.Cbsdf   getBSDF( byte index )
 
-            void setAttribute( const char* name, const Cmaxwell.CmultiValue.Cmap& map )
-            void setActiveAttribute( const char* name, const Cmaxwell.CmultiValue.Cmap& map )
+            #void setAttribute( const char* name, const Cmaxwell.CmultiValue.Cmap& map )
+            #void setActiveAttribute( const char* name, const Cmaxwell.CmultiValue.Cmap& map )
 
-            byte getAttribute( const char* name, Cmaxwell.CmultiValue.Cmap& map )
-            byte getActiveAttribute( const char* name, Cmaxwell.CmultiValue.Cmap& map )
-
-
+            #byte getAttribute( const char* name, Cmaxwell.CmultiValue.Cmap& map )
+            #byte getActiveAttribute( const char* name, Cmaxwell.CmultiValue.Cmap& map )
 
 
 
-        cppclass CmultiValue:
-            const char* pID
-            const char* pType
-            void* pParameter
-            CmultiValue(const char* _pID, const char* _pType, void* _pParameter)
-            cppclass Cmap:
-                byte type
-                real value
-                Crgb rgb
-                Cmap()
+
+
+        #cppclass CmultiValue:
+        #    const char* pID
+        #    const char* pType
+        #    void* pParameter
+        #    CmultiValue(const char* _pID, const char* _pType, void* _pParameter)
+        #    cppclass Cmap:
+        #        byte type
+        #        real value
+        #        Crgb rgb
+        #        Cmap()
 
         cppclass Ccamera(Cpointer):
             cppclass Citerator:
@@ -287,11 +299,11 @@ cdef extern from "h/maxwell.h":
             byte setLayerDisplacement( dword index )
             byte getLayerDisplacement( dword& index, bool& displacementOk )
 
-            byte setColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
-            byte getColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
+            #byte setColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
+            #byte getColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
 
-            byte setActiveColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
-            byte getActiveColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
+            #byte setActiveColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
+            #byte getActiveColor( const char* pID, Cmaxwell.CmultiValue.Cmap& map )
 
             byte setNormalMapState( bool enabled )
             byte getNormalMapState( bool& enabled )
@@ -300,6 +312,12 @@ cdef extern from "h/maxwell.h":
             byte getColorID( Crgb& color )
 
             # XXX TODO preview functions (line 434 onwards
+
+        cppclass CtrianglesGroup(Cpointer):
+            cppclass Citerator:
+                Citerator()
+                Cmaxwell.CtrianglesGroup first(Cmaxwell* pMaxwell)
+                Cmaxwell.CtrianglesGroup next()
 
 
         cppclass Cobject(Cpointer):
@@ -322,21 +340,6 @@ cdef extern from "h/maxwell.h":
 
             # Method:    getInstanced. If this Cobject is an instance this method returns its parent object
             Cmaxwell.Cobject getInstanced()
-
-            # Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
-            byte isRFRK( byte& isRfrk )
-
-            # Method:    getRFRKParameters
-            byte getRFRKParameters( char*& binSeqNames, char*& rwName, char*& substractiveField,
-                            real& scale, real& resolution, real& polySize, real& radius, real& smooth, real& core,
-                            real& splash, real& maxVelocity, int& axis, real& fps, int& frame, int& offset, bool& f,
-                            int& rwTesselation, bool& mb, real& mbCoef )
-
-
-            byte setRFRKParameters( const char* binSeqNames, const char* rwName, char* substractiveField,
-                                real scale, real resolution, real polySize, real radius, real smooth, real core,
-                                real splash, real maxVelocity, int axis, real fps, int frame, int offset, bool flipNorm,
-                                int rwTesselation, bool mb, real mbCoef )
 
             # Method:    get/setProxyPath. Get/sets the scene file referenced by this object
             const char* getReferencedScenePath()
@@ -377,11 +380,11 @@ cdef extern from "h/maxwell.h":
             byte  getDependencies( dword& numDependencies, char** & paths, const bool& searchInsideProxy )
 
             # Method:    getters/setters to set the mesh properties of the Cobject
-            byte    getNumVertexes( dword& nVertexes )
-            byte    getNumTriangles( dword& nTriangles )
-            byte    getNumNormals( dword& nNormals )
-            byte    getNumPositionsPerVertex( dword& nPositions )
-            byte    getNumChannelsUVW( dword& nChannelsUVW )
+            byte    getVerticesCount( dword& nVertexes )
+            byte    getTrianglesCount( dword& nTriangles )
+            byte    getNormalsCount( dword& nNormals )
+            byte    getPositionsPerVertexCount( dword& nPositions )
+            byte    getChannelsUVWCount( dword& nChannelsUVW )
 
             byte    addChannelUVW( dword& index, byte id)
             byte    generateSphericalUVW( dword& iChannel, Cbase& projectorBase,
@@ -404,8 +407,8 @@ cdef extern from "h/maxwell.h":
             byte    setTriangle( dword iTriangle, dword iVertex1, dword iVertex2, dword iVertex3,
                                  dword iNormal1, dword iNormal2, dword iNormal3 )
 
-            byte    getTriangleGroup( dword iTriangle, dword& idGroup )
-            byte    setTriangleGroup( dword iTriangle, dword idGroup )
+            #byte    getTriangleGroup( dword iTriangle, dword& idGroup )
+            #byte    setTriangleGroup( dword iTriangle, dword idGroup )
 
             byte    getTriangleUVW( dword iTriangle, dword iChannelID, float& u1, float& v1, float& w1,
                                     float& u2, float& v2, float& w2, float& u3, float& v3, float& w3 )
@@ -547,7 +550,7 @@ cdef extern from "h/maxwell.h":
 
 
         Cmaxwell(byte(*callback)(byte isError, const char *pMethod, const char *pError, const void *pValue))
-        byte readMXS(const char* pPath, const CoptionsReadMXS& mxsOptions)
+        byte readMXS(const char* pPath, const ReadMxsOptions& mxsOptions)
         byte writeMXS(const char* pPath)
         byte getSceneInfo(Cmaxwell.CsceneInfo& info)
 
@@ -572,7 +575,7 @@ cdef extern from "h/maxwell.h":
         Cmaxwell.Ccamera addCamera( const char* pName, dword nSteps, real shutter, real filmWidth,
                            real filmHeight, real iso, const char* pDiaphragmType, real angle,
                            dword nBlades, dword fps, dword xRes, dword yRes, real pixelAspect,
-                           byte projectionType)
+                           LensType  projectionType)
 
         # Method:    getCamera. Given the name of a camera this function returns its Ccamera pointer.^M
         Cmaxwell.Ccamera getCamera( const char* pCameraName )

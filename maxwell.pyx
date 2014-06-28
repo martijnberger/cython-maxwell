@@ -21,7 +21,7 @@ cdef class maxwell:
     def readMXS(self, filename):
         py_byte_string = filename.encode('UTF-8')
         cdef const char* f = py_byte_string
-        res = self.thisptr.readMXS(f, Cmaxwell.CoptionsReadMXS())
+        res = self.thisptr.readMXS(f, READ_ALL)
         if res == 0:
             raise Exception("Could not open: {}".format(filename))
 
@@ -118,7 +118,7 @@ cdef class maxwell:
         cdef const char* pName = py_byte_string
         py_byte_string2 = DiaphragmType.encode('UTF-8')
         cdef const char* pDiaphragmType = py_byte_string2
-        cdef Cmaxwell.Ccamera obj = self.thisptr.addCamera(pName, nSteps, shutter, filmWidth, filmHeight, iso, pDiaphragmType, angle, nBlades,  fps,  xRes,  yRes,  pixelAspect, 0)
+        cdef Cmaxwell.Ccamera obj = self.thisptr.addCamera(pName, nSteps, shutter, filmWidth, filmHeight, iso, pDiaphragmType, angle, nBlades,  fps,  xRes,  yRes,  pixelAspect, TYPE_THIN_LENS )
         return _t_Camera(obj)
 
 
@@ -473,14 +473,6 @@ cdef class Object:
         cdef Cmaxwell.Cobject res = self.thisptr.getInstanced()
         return _t_Object_from_pointer(self.sceneptr,  res.getPointer())
 
-    def isRFRK(self):
-        # Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
-        cdef byte rfrk = 0
-        cdef byte res = self.thisptr.isRFRK(rfrk)
-        if res == 0:
-            raise TypeError("cannot call isRFRK on this")
-        return True if rfrk == 1 else False
-
     def isNull(self):
         return True if self.thisptr.isNull() == 1 else False
 
@@ -510,27 +502,27 @@ cdef class Object:
     # Method:    getters/setters to set the mesh properties of the Cobject
     def getNumVertexes(self):
         cdef dword nVertexes = 0
-        self.thisptr.getNumVertexes(nVertexes)
+        self.thisptr.getVerticesCount(nVertexes)
         return nVertexes
 
     def getNumTriangles(self):
         cdef dword nTriangles = 0
-        res = self.thisptr.getNumTriangles( nTriangles )
+        res = self.thisptr.getTrianglesCount( nTriangles )
         return nTriangles
 
     def getNumNormals(self):
         cdef dword nNormals = 0
-        res = self.thisptr.getNumNormals( nNormals )
+        res = self.thisptr.getNormalsCount( nNormals )
         return nNormals
 
     def getNumPositionsPerVertex(self):
         cdef dword nPositions = 0
-        res = self.thisptr.getNumPositionsPerVertex( nPositions )
+        res = self.thisptr.getPositionsPerVertexCount( nPositions )
         return nPositions
 
     def getNumChannelsUVW(self):
         cdef dword nChannelsUVW = 0
-        res = self.thisptr.getNumChannelsUVW( nChannelsUVW )
+        res = self.thisptr.getChannelsUVWCount( nChannelsUVW )
         return nChannelsUVW
 
     #byte    setBaseAndPivot( Cbase base, Cbase pivot, real substepTime)
@@ -607,18 +599,18 @@ cdef class Object:
             raise IndexError('Triangle out of range')
 
     #byte    getTriangleGroup( dword iTriangle )
-    def getTriangleGroup(self, dword iTriangle):
-        cdef dword idGroup = 0
-        cdef byte res = self.thisptr.getTriangleGroup( iTriangle, idGroup )
-        if res == 0:
-            raise IndexError('Triangle out of range')
-        return idGroup
+    #def getTriangleGroup(self, dword iTriangle):
+    #    cdef dword idGroup = 0
+    #    cdef byte res = self.thisptr.getTriangleGroup( iTriangle, idGroup )
+    #    if res == 0:
+    #        raise IndexError('Triangle out of range')
+    #    return idGroup
 
     #byte    setTriangleGroup( dword iTriangle, dword idGroup )
-    def setTriangleGroup(self, dword iTriangle, dword idGroup ):
-        cdef byte res = self.thisptr.setTriangleGroup(iTriangle, idGroup)
-        if res == 0:
-            raise IndexError('Triangle out of range')
+    #def setTriangleGroup(self, dword iTriangle, dword idGroup ):
+    #    cdef byte res = self.thisptr.setTriangleGroup(iTriangle, idGroup)
+    #    if res == 0:
+    #        raise IndexError('Triangle out of range')
 
 
     #byte    getTriangleUVW( dword iTriangle, dword iChannelID, float& u1, float& v1, float& w1,\
@@ -664,19 +656,19 @@ cdef class Object:
 
 
     #byte    getGroupMaterial( dword iGroup, Cmaterial& material )
-    def getGroupMaterial(self, dword iGroup):
-        cdef Cmaxwell.Cmaterial* mat = new Cmaxwell.Cmaterial()
-        cdef byte res = self.thisptr.getGroupMaterial(iGroup,deref(mat))
-        if res == 0:
-            raise IndexError('Material out of range')
-        return _t_Material(mat)
+    #def getGroupMaterial(self, dword iGroup):
+    #    cdef Cmaxwell.Cmaterial* mat = new Cmaxwell.Cmaterial()
+    #    cdef byte res = self.thisptr.getGroupMaterial(iGroup,deref(mat))
+    #    if res == 0:
+    #        raise IndexError('Material out of range')
+    #    return _t_Material(mat)
 
 
     #byte    setGroupMaterial( dword iGroup, Cmaterial material )
-    def setGroupMaterial(self, iGroup, Material material ):
-        cdef byte res = self.thisptr.setGroupMaterial(iGroup, material.thisptr)
-        if res == 0:
-            raise IndexError('setTriangleMaterial failed')
+    #def setGroupMaterial(self, iGroup, Material material ):
+    #    cdef byte res = self.thisptr.setGroupMaterial(iGroup, material.thisptr)
+    #    if res == 0:
+    #        raise IndexError('setTriangleMaterial failed')
 
     #
     # DISPLAY FUNCTIONS. Getters/setters of visibility attributes of  Cobject
@@ -776,21 +768,6 @@ cdef class Object:
         #byte    setShear( Cvector vector )
 
 '''
-# Method:    isRFRK. Returns isRfrk = 1 if this Cobject is a RealFlow particles object, otherwise returns 0.
-byte isRFRK( byte& isRfrk )
-
-# Method:    getRFRKParameters
-byte getRFRKParameters( char*& binSeqNames, char*& rwName, char*& substractiveField,\
-    real& scale, real& resolution, real& polySize, real& radius, real& smooth, real& core,\
-    real& splash, real& maxVelocity, int& axis, real& fps, int& frame, int& offset, bool& f,\
-    int& rwTesselation, bool& mb, real& mbCoef )
-
-
-byte setRFRKParameters( const char* binSeqNames, const char* rwName, char* substractiveField,\
-    real scale, real resolution, real polySize, real radius, real smooth, real core,\
-                                                                               real splash, real maxVelocity, int axis, real fps, int frame, int offset, bool flipNorm,\
-                                                                                                                                                              int rwTesselation, bool mb, real mbCoef )
-
 
 # Method:    get/setReferenceMaterial. Get/sets the material of an specific object inside the referenced scene
 byte getReferencedSceneMaterial( const char* objectName, Cmaterial& material )
@@ -1071,14 +1048,27 @@ cdef object _t_BSDF(Cmaxwell.Cbsdf b):
 cdef class Reflectance:
     cdef Cmaxwell.Creflectance thisptr
 
-    def getColor(self, channel):
-        a = bytes(channel, "UTF-8")
-        cdef Cmaxwell.CmultiValue.Cmap* map = new Cmaxwell.CmultiValue.Cmap()
-        cdef const char* pID = a
-        res = self.thisptr.getColor(pID, deref(map))
-        if res == 0:
-            raise Exception("getColor failed")
-        return _t_MultiValueMap(map)
+    def getAttribute(self, str attribute):
+        cdef Cmaxwell.Cattribute a
+        cdef const char* res_string
+
+        if attribute == 'color':
+            self.thisptr.getAttribute('color', a)
+            if a.activeType == MAP_TYPE_RGB:
+                return (a.rgb.r, a.rgb.g, a.rgb.b)
+            if a.activeType == MAP_TYPE_BITMAP:
+                res_string = a.textureMap.getPath()
+                return res_string
+    #    self.thisptr.get
+    #    a = bytes(channel, "UTF-8")
+    #    cdef Cmaxwell.CmultiValue.Cmap* map = new Cmaxwell.CmultiValue.Cmap()
+    #    cdef const char* pID = a
+    #    res = self.thisptr.getColor(pID, deref(map))
+    #    if res == 0:
+    #        raise Exception("getColor failed")
+    #    return _t_MultiValueMap(map)
+
+
 
 
 cdef object _t_Reflectance(Cmaxwell.Creflectance r):
@@ -1086,21 +1076,21 @@ cdef object _t_Reflectance(Cmaxwell.Creflectance r):
     res.thisptr = r
     return res
 
-cdef class MultiValueMap:
-    cdef Cmaxwell.CmultiValue.Cmap thisprt
-
-    property rgb:
-        def __get__(self): return _t_rgb(&self.thisprt.rgb)
-
-    property pFileName:
-        def __get__(self):
-            if self.thisprt.pFileName != NULL:
-                return self.thisprt.pFileName
-
-cdef object _t_MultiValueMap(Cmaxwell.CmultiValue.Cmap* m):
-   res = MultiValueMap()
-   res.thisprt = deref(m)
-   return res
+#cdef class MultiValueMap:
+#    cdef Cmaxwell.CmultiValue.Cmap thisprt
+#
+#    property rgb:
+#        def __get__(self): return _t_rgb(&self.thisprt.rgb)
+#
+#    property pFileName:
+#        def __get__(self):
+#            if self.thisprt.pFileName != NULL:
+#                return self.thisprt.pFileName
+#
+#cdef object _t_MultiValueMap(Cmaxwell.CmultiValue.Cmap* m):
+#   res = MultiValueMap()
+#   res.thisprt = deref(m)
+#   return res
 
 
 cdef class rgb:
@@ -1180,17 +1170,17 @@ cdef class camera:
         self.thisptr.getStep( iStep, deref(o), deref(fP), deref(u), fL, fS, sT )
         return [_t_Vector(o),_t_Vector(fP),_t_Vector(u),fL,fS,sT]
 
-    def setOrthoValues(self, dword iStep, real orthoX, real orthoY, real orthoZoom, real focalLength, real fStop ):
-        self.thisptr.setOrthoValues( iStep,orthoX, orthoY, orthoZoom, focalLength, fStop )
+    #def setOrthoValues(self, dword iStep, real orthoX, real orthoY, real orthoZoom, real focalLength, real fStop ):
+    #    self.thisptr.setOrthoValues( iStep,orthoX, orthoY, orthoZoom, focalLength, fStop )
 
-    def getOrthoValues(self, dword iStep):
-        cdef real orthoX = 0
-        cdef real orthoY = 0
-        cdef real orthoZoom = 0
-        cdef real focalLength = 0
-        cdef real fStop = 0
-        self.thisptr.getOrthoValues( iStep, orthoX, orthoY, orthoZoom, focalLength, fStop )
-        return [orthoX,orthoY,orthoZoom,focalLength,fStop]
+    #def getOrthoValues(self, dword iStep):
+    #    cdef real orthoX = 0
+    #    cdef real orthoY = 0
+    #    cdef real orthoZoom = 0
+    #    cdef real focalLength = 0
+    #    cdef real fStop = 0
+    #    self.thisptr.getOrthoValues( iStep, orthoX, orthoY, orthoZoom, focalLength, fStop )
+    #    return [orthoX,orthoY,orthoZoom,focalLength,fStop]
 
     def setShiftLens(self, real xShift, real yShift):
         ''' Sets shift lens between -100 and 100 '''
@@ -1218,26 +1208,33 @@ cdef class camera:
         cdef real filmWidth = 0
         cdef real filmHeight = 0
         cdef real iso = 0
-        cdef dword fps = 0
+        cdef real fps = 0
         cdef dword xRes = 0
         cdef dword yRes = 0
         cdef real pixelAspect = 0
         cdef byte projectionType = 0
-        self.thisptr.getValues( nSteps, shutter, filmWidth, filmHeight, iso, &pDiaphragmType, angle, nBlades,\
-            fps, xRes, yRes, pixelAspect,projectionType )
+        #self.thisptr.getValues( nSteps, shutter, filmWidth, filmHeight, iso, ,\
+        #    fps, xRes, yRes, pixelAspect,projectionType )
+        self.thisptr.getShutter(shutter)
+        self.thisptr.getFilmSize(filmWidth, filmHeight)
+        self.thisptr.getIso(iso)
+        self.thisptr.getDiaphragm(&pDiaphragmType, angle, nBlades)
+        self.thisptr.getFPS(fps)
+        self.thisptr.getResolution(xRes, yRes)
+        self.thisptr.getPixelAspect(pixelAspect)
         return {'nSteps': nSteps, 'shutter': shutter, 'orthoX': orthoX,'orthoY': orthoY,'orthoZoom': orthoZoom,
                 'focalLenght': focalLenght, 'fStop': fStop, 'pDiaphragmType': pDiaphragmType, 'angle': angle,'nBlades': nBlades,
                 'filmWidth': filmWidth, 'filmHeight': filmHeight, 'iso': iso, 'fps': fps, 'xRes': xRes, 'yRes':yRes, 'pixelAspect': pixelAspect, 'projectionType': projectionType }
 
-    def getOrthoValues(self, dword iStep):
-        ''' returns a dict with values '''
-        cdef real orthoX = 0
-        cdef real orthoY = 0
-        cdef real orthoZoom = 0
-        cdef real focalLength = 0
-        cdef real fStop = 0
-        self.thisptr.getOrthoValues( iStep, orthoX, orthoY, orthoZoom, focalLength, fStop )
-        return {'orthoX': orthoX,'orthoY': orthoY,'orthoZoom': orthoZoom, 'focalLenght': focalLength, 'fStop': fStop }
+    #def getOrthoValues(self, dword iStep):
+    #    ''' returns a dict with values '''
+    #    cdef real orthoX = 0
+    #    cdef real orthoY = 0
+    #    cdef real orthoZoom = 0
+    #    cdef real focalLength = 0
+    #    cdef real fStop = 0
+    #    self.thisptr.getOrthoValues( iStep, orthoX, orthoY, orthoZoom, focalLength, fStop )
+    #    return {'orthoX': orthoX,'orthoY': orthoY,'orthoZoom': orthoZoom, 'focalLenght': focalLength, 'fStop': fStop }
 
     #byte setResolution( dword xRes, dword yRes )
     def setResolution(self,dword xRes, dword yRes):

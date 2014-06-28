@@ -2,7 +2,7 @@
 from defines cimport *
 from vectors cimport *
 
-cdef extern from "h/color.h":
+cdef extern from "h/mx_color.h":
     ctypedef int byte "byte"
     ctypedef int bool "bool"
     cdef cppclass Crgb
